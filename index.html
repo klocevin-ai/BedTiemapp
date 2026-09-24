@@ -1,0 +1,1477 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bedtime Procrastination THPT - Quản Lý Giấc Ngủ & Thức Khuya Khoa Học</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        night: {
+                            950: '#060913',
+                            900: '#0B0F1E',
+                            850: '#10162A',
+                            800: '#172038',
+                            700: '#232E4D',
+                            accent: '#8B5CF6',
+                            neon: '#A855F7',
+                            cyan: '#06B6D4',
+                            emerald: '#10B981',
+                            amber: '#F59E0B',
+                            rose: '#F43F5E'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        
+        .glow-purple { box-shadow: 0 0 25px -5px rgba(168, 85, 247, 0.35); }
+        .glow-cyan { box-shadow: 0 0 25px -5px rgba(6, 182, 212, 0.35); }
+        .glow-rose { box-shadow: 0 0 25px -5px rgba(244, 63, 94, 0.4); }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #060913; }
+        ::-webkit-scrollbar-thumb { background: #232E4D; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #8B5CF6; }
+        
+        .ai-content h1, .ai-content h2, .ai-content h3 {
+            color: #C084FC;
+            font-weight: 700;
+            margin-top: 0.5rem;
+            margin-bottom: 0.25rem;
+        }
+        .ai-content p { margin-bottom: 0.5rem; line-height: 1.6; }
+        .ai-content ul { list-style: none; padding-left: 0; margin-bottom: 0.5rem; }
+        .ai-content li { position: relative; padding-left: 1.25rem; margin-bottom: 0.25rem; }
+        .ai-content li::before {
+            content: "✦";
+            position: absolute;
+            left: 0;
+            color: #06B6D4;
+            font-size: 0.8rem;
+        }
+        .ai-content strong { color: #F8FAFC; font-weight: 600; }
+        .ai-content blockquote {
+            border-left: 3px solid #8B5CF6;
+            padding-left: 0.75rem;
+            color: #CBD5E1;
+            font-style: italic;
+            margin: 0.5rem 0;
+            background: rgba(139, 92, 246, 0.08);
+            border-radius: 0 8px 8px 0;
+        }
+
+        @keyframes ringShake {
+            0%, 100% { transform: rotate(0deg); }
+            20%, 60% { transform: rotate(15deg); }
+            40%, 80% { transform: rotate(-15deg); }
+        }
+        .animate-ring { animation: ringShake 0.5s infinite; }
+    </style>
+</head>
+<body class="bg-night-950 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-purple-600 selection:text-white relative">
+
+    <!-- MODAL BÁO ĐỘNG KHI ĐẾN GIỜ ĐI NGỦ -->
+    <div id="curfew-alarm-modal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 hidden">
+        <div class="bg-night-900 border-2 border-rose-500 rounded-3xl p-6 sm:p-8 max-w-lg w-full text-center space-y-6 glow-rose shadow-2xl">
+            <div class="w-20 h-20 bg-rose-500/20 text-rose-400 rounded-full flex items-center justify-center mx-auto text-4xl border border-rose-500/40">
+                <i class="fa-solid fa-bell animate-ring"></i>
+            </div>
+            <div class="space-y-2">
+                <span class="px-3 py-1 bg-rose-500/20 text-rose-300 text-xs rounded-full border border-rose-500/40 font-bold uppercase tracking-wider">
+                    Cảnh Báo Giới Nghiêm Giấc Ngủ
+                </span>
+                <h3 class="text-2xl sm:text-3xl font-extrabold text-white">ĐÃ ĐẾN GIỜ PHẢI ĐI NGỦ!</h3>
+                <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                    Bạn đã chạm mốc hẹn giờ: <strong id="alarm-curfew-display" class="text-rose-400 font-mono text-base">--:--</strong>. 
+                    Mọi bài tập còn lại xin hãy ghi chú ra giấy và xử lý vào sáng mai. Giấc ngủ quý hơn bất kỳ deadline nào!
+                </p>
+            </div>
+            
+            <div class="p-3 bg-night-950 rounded-xl border border-slate-800 text-xs text-amber-300 flex items-center justify-center gap-2">
+                <i class="fa-solid fa-bed"></i> Hãy gập sách, tắt đèn và đặt điện thoại cách giường ít nhất 2m.
+            </div>
+
+            <div class="space-y-2.5">
+                <button onclick="dismissCurfewAlarm(true)" class="w-full py-4 bg-gradient-to-r from-emerald-600 to-cyan-600 hover:opacity-90 text-white font-bold rounded-2xl text-sm transition shadow-lg flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-check"></i> Tôi Đi Ngủ Ngay (+1 Điểm Kỷ Luật)
+                </button>
+                <button onclick="snoozeCurfewAlarm()" id="btn-snooze" class="w-full py-2.5 bg-night-850 hover:bg-night-800 border border-slate-700 text-slate-300 text-xs font-semibold rounded-xl transition">
+                    <i class="fa-solid fa-clock-rotate-left mr-1"></i> Cho mình nốt 5 phút (Hoãn tối đa 1 lần)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOP ANNOUNCEMENT & REALTIME CIRCADIAN INDICATOR -->
+    <div class="bg-gradient-to-r from-purple-950 via-night-900 to-indigo-950 border-b border-purple-900/30 text-xs py-2 px-4">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping mr-1.5"></span> Nhịp Sinh Học
+                </span>
+                <span id="circadian-badge" class="text-slate-300 font-medium hidden sm:inline">Đang đo nhịp sinh học...</span>
+            </div>
+            <div class="flex items-center gap-4 text-slate-400">
+                <span id="realtime-clock" class="font-mono text-cyan-300 font-semibold"><i class="fa-regular fa-clock mr-1"></i> --:--:--</span>
+                <div class="flex items-center gap-2 border-l border-slate-700 pl-3">
+                    <span class="text-slate-400"><i class="fa-solid fa-fire text-amber-400 mr-1"></i> Chuỗi Kỷ Luật:</span>
+                    <span id="streak-counter" class="text-amber-300 font-mono font-bold">0 Ngày</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NAVBAR -->
+    <nav class="sticky top-0 z-40 bg-night-900/90 backdrop-blur-md border-b border-slate-800/80 px-4 lg:px-8 py-3.5">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 via-pink-500 to-cyan-400 p-[2px] shadow-lg shadow-purple-500/20">
+                    <div class="w-full h-full bg-night-900 rounded-[10px] flex items-center justify-center">
+                        <i class="fa-solid fa-bed text-pink-400 text-lg"></i>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="font-extrabold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400">Bedtime Procrastination</span>
+                        <span class="text-[10px] px-2 py-0.5 rounded bg-pink-900/50 text-pink-300 border border-pink-500/30 font-semibold tracking-wider uppercase">THPT Hub</span>
+                    </div>
+                    <span class="block text-xs text-slate-400 font-medium">Chủ Động Nhịp Ngủ & Thức Khuya Khoa Học</span>
+                </div>
+            </div>
+
+            <!-- Desktop Nav -->
+            <div class="hidden xl:flex items-center gap-1.5">
+                <button onclick="switchTab('mastery')" id="tab-btn-mastery" class="tab-btn px-3 py-2 rounded-xl text-xs font-semibold transition text-purple-300 bg-purple-900/30 border border-purple-500/40">
+                    <i class="fa-solid fa-stopwatch mr-1.5 text-purple-400"></i> Hẹn Giờ & Giới Nghiêm
+                </button>
+                <button onclick="switchTab('diagnosis')" id="tab-btn-diagnosis" class="tab-btn px-3 py-2 rounded-xl text-xs font-semibold transition text-slate-400 hover:text-slate-200 hover:bg-night-800">
+                    <i class="fa-solid fa-stethoscope mr-1.5 text-pink-400"></i> Khảo Sát Thói Quen
+                </button>
+                <button onclick="switchTab('soundspace')" id="tab-btn-soundspace" class="tab-btn px-3 py-2 rounded-xl text-xs font-semibold transition text-slate-400 hover:text-slate-200 hover:bg-night-800">
+                    <i class="fa-solid fa-headphones-simple mr-1.5 text-cyan-400"></i> Âm Thanh Đêm
+                </button>
+                <button onclick="switchTab('sleep-calc')" id="tab-btn-sleep-calc" class="tab-btn px-3 py-2 rounded-xl text-xs font-semibold transition text-slate-400 hover:text-slate-200 hover:bg-night-800">
+                    <i class="fa-solid fa-clock mr-1.5 text-indigo-400"></i> Chu Kỳ 90 Phút
+                </button>
+                <button onclick="switchTab('biohacks')" id="tab-btn-biohacks" class="tab-btn px-3 py-2 rounded-xl text-xs font-semibold transition text-slate-400 hover:text-slate-200 hover:bg-night-800">
+                    <i class="fa-solid fa-shield-halved mr-1.5 text-emerald-400"></i> Cứu Hộ Cú Đêm
+                </button>
+                <button onclick="switchTab('ai-coach')" id="tab-btn-ai-coach" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold transition bg-gradient-to-r from-purple-600/40 to-cyan-600/40 text-cyan-200 border border-cyan-500/40 hover:from-purple-600 hover:to-cyan-600 hover:text-white">
+                    <i class="fa-solid fa-brain mr-1.5 text-cyan-300"></i> Cố Vấn AI Chuyên Sâu
+                </button>
+            </div>
+
+            <!-- Mobile Toggle Button -->
+            <button id="mobile-menu-btn" onclick="toggleMobileMenu()" class="xl:hidden p-2 rounded-xl bg-night-800 text-slate-300 hover:text-white border border-slate-700">
+                <i class="fa-solid fa-bars text-lg"></i>
+            </button>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden xl:hidden mt-3 pt-3 border-t border-slate-800 grid grid-cols-2 gap-2 text-xs">
+            <button onclick="switchTab('mastery'); toggleMobileMenu()" class="text-left p-2.5 rounded-lg font-medium text-purple-300 bg-purple-900/30">
+                <i class="fa-solid fa-stopwatch mr-1.5"></i> Hẹn Giờ Giới Nghiêm
+            </button>
+            <button onclick="switchTab('diagnosis'); toggleMobileMenu()" class="text-left p-2.5 rounded-lg font-medium text-slate-300 hover:bg-night-800">
+                <i class="fa-solid fa-stethoscope mr-1.5"></i> Khảo Sát Thói Quen
+            </button>
+            <button onclick="switchTab('soundspace'); toggleMobileMenu()" class="text-left p-2.5 rounded-lg font-medium text-slate-300 hover:bg-night-800">
+                <i class="fa-solid fa-headphones-simple mr-1.5"></i> Âm Thanh Đêm
+            </button>
+            <button onclick="switchTab('sleep-calc'); toggleMobileMenu()" class="text-left p-2.5 rounded-lg font-medium text-slate-300 hover:bg-night-800">
+                <i class="fa-solid fa-clock mr-1.5"></i> Chu Kỳ 90 Phút
+            </button>
+            <button onclick="switchTab('biohacks'); toggleMobileMenu()" class="text-left p-2.5 rounded-lg font-medium text-slate-300 hover:bg-night-800">
+                <i class="fa-solid fa-shield-halved mr-1.5"></i> Cứu Hộ Cú Đêm
+            </button>
+            <button onclick="switchTab('ai-coach'); toggleMobileMenu()" class="text-left p-2.5 rounded-lg font-medium text-cyan-300 bg-cyan-950/40 border border-cyan-500/30">
+                <i class="fa-solid fa-brain mr-1.5"></i> Cố Vấn AI Đêm Khuya
+            </button>
+        </div>
+    </nav>
+
+    <!-- MAIN CONTAINER -->
+    <main class="max-w-7xl mx-auto px-4 lg:px-8 py-8 flex-1 w-full space-y-8">
+
+        <!-- TAB 1: TRUNG TÂM HẸN GIỜ & GIỚI NGHIÊM THÔNG MINH -->
+        <section id="section-mastery" class="tab-content space-y-8">
+            
+            <!-- Hero Banner -->
+            <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-950 via-night-900 to-slate-900 border border-purple-500/30 p-6 lg:p-8 glow-purple">
+                <div class="relative z-10 max-w-3xl space-y-3">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-purple-500/20 text-purple-300 border border-purple-500/40">
+                        <i class="fa-solid fa-shield-cat text-purple-400"></i> Phòng Tuyến Chống Trì Hoãn Giờ Ngủ
+                    </span>
+                    <h1 class="text-2xl lg:text-4xl font-extrabold text-white tracking-tight">
+                        Trung Tâm Hẹn Giờ & Giới Nghiêm Đêm
+                    </h1>
+                    <p class="text-slate-300 text-xs sm:text-sm leading-relaxed">
+                        Thiết lập mốc giới nghiêm, đồng hồ đếm ngược thời gian thực, nhắc nhở trước giờ G và chuông báo động đa âm sắc giúp học sinh gập máy đúng lúc.
+                    </p>
+                </div>
+            </div>
+
+            <!-- BỘ CÔNG CỤ HẸN GIỜ NÂNG CẤP -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- Bảng Thiết Lập (Cột trái 2 phần) -->
+                <div class="lg:col-span-2 bg-night-900 p-6 sm:p-8 rounded-3xl border border-slate-800 shadow-2xl space-y-6">
+                    
+                    <!-- Tabs chọn kiểu hẹn giờ -->
+                    <div class="flex items-center gap-2 p-1.5 bg-night-950 rounded-2xl border border-slate-800 text-xs font-medium">
+                        <button onclick="setTimerSubMode('curfew')" id="timer-sub-curfew" class="flex-1 py-2 rounded-xl transition bg-purple-600 text-white font-semibold">
+                            <i class="fa-solid fa-business-time mr-1"></i> Mốc Giờ Giới Nghiêm
+                        </button>
+                        <button onclick="setTimerSubMode('nap')" id="timer-sub-nap" class="flex-1 py-2 rounded-xl transition text-slate-400 hover:text-white">
+                            <i class="fa-solid fa-battery-half mr-1"></i> Chợp Mắt Chu Kỳ
+                        </button>
+                        <button onclick="setTimerSubMode('countdown')" id="timer-sub-countdown" class="flex-1 py-2 rounded-xl transition text-slate-400 hover:text-white">
+                            <i class="fa-solid fa-hourglass-half mr-1"></i> Học Xong Đi Ngủ
+                        </button>
+                    </div>
+
+                    <!-- Panel 1: Giới nghiêm giờ cố định -->
+                    <div id="panel-curfew" class="space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-300 uppercase mb-2">Chọn Giờ Giới Nghiêm Đề Xuất:</label>
+                                <select id="curfew-preset-select" class="w-full bg-night-950 border border-slate-700 text-cyan-300 font-mono text-sm rounded-xl p-3 focus:outline-none focus:border-cyan-500">
+                                    <option value="23:00">23:00 (Mức lý tưởng cho thể chất)</option>
+                                    <option value="23:30">23:30 (Khuyên dùng lớp 10-11)</option>
+                                    <option value="00:00">00:00 (Nửa đêm - Chốt chặn)</option>
+                                    <option value="00:30">00:30 (Mức an toàn ôn thi)</option>
+                                    <option value="00:45" selected>00:45 (Mốc giới hạn sinh học)</option>
+                                    <option value="01:15">01:15 (Tối đa, không thức hơn)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-300 uppercase mb-2">Hoặc Giờ Tùy Biến Của Bạn:</label>
+                                <input type="time" id="curfew-custom-input" class="w-full bg-night-950 border border-slate-700 text-amber-300 font-mono text-sm rounded-xl p-2.5 focus:outline-none focus:border-amber-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Panel 2: Chợp mắt theo chu kỳ -->
+                    <div id="panel-nap" class="space-y-4 hidden">
+                        <label class="block text-xs font-bold text-slate-300 uppercase">Chọn Thời Gian Chợp Mắt Sinh Học:</label>
+                        <div class="grid grid-cols-3 gap-3">
+                            <button onclick="setNapDuration(20)" id="nap-btn-20" class="p-3 bg-night-950 border border-slate-800 rounded-xl text-center hover:border-cyan-500 transition">
+                                <span class="text-base font-bold text-cyan-400 block font-mono">20 Phút</span>
+                                <span class="text-[10px] text-slate-400">Power Nap tỉnh táo</span>
+                            </button>
+                            <button onclick="setNapDuration(45)" id="nap-btn-45" class="p-3 bg-night-950 border border-slate-800 rounded-xl text-center hover:border-cyan-500 transition">
+                                <span class="text-base font-bold text-purple-400 block font-mono">45 Phút</span>
+                                <span class="text-[10px] text-slate-400">Hồi phục trí nhớ</span>
+                            </button>
+                            <button onclick="setNapDuration(90)" id="nap-btn-90" class="p-3 bg-night-950 border border-cyan-500/60 bg-cyan-950/20 rounded-xl text-center transition">
+                                <span class="text-base font-bold text-emerald-400 block font-mono">90 Phút</span>
+                                <span class="text-[10px] text-slate-300 font-semibold">1 Chu kỳ hoàn chỉnh</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Panel 3: Đếm ngược học xong là ngủ -->
+                    <div id="panel-countdown" class="space-y-4 hidden">
+                        <label class="block text-xs font-bold text-slate-300 uppercase">Còn bao nhiêu phút nữa bạn muốn gập sách ngủ?</label>
+                        <div class="flex items-center gap-3">
+                            <input type="number" id="countdown-minutes-input" value="45" min="5" max="180" class="w-32 bg-night-950 border border-slate-700 text-cyan-300 font-mono text-center text-lg rounded-xl p-3 focus:outline-none focus:border-cyan-500">
+                            <span class="text-xs text-slate-400">phút (Hệ thống sẽ đếm ngược và đổ chuông ngay sau khoảng thời gian này).</span>
+                        </div>
+                    </div>
+
+                    <!-- Lựa chọn Âm thanh chuông báo & Báo trước -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-slate-800 pt-5">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-300 uppercase mb-2">Kiểu Âm Thanh Chuông:</label>
+                            <div class="flex items-center gap-2">
+                                <select id="alarm-sound-tone" class="flex-1 bg-night-950 border border-slate-700 text-xs text-slate-200 rounded-xl p-2.5 focus:outline-none">
+                                    <option value="cyber">🚨 Cyber Alert (Gấp gáp, báo động)</option>
+                                    <option value="zen">🔔 Chuông Thiền Zen (Dịu êm, sâu lắng)</option>
+                                    <option value="digital">⏰ Digital Beep (Đồng hồ cổ điển)</option>
+                                    <option value="lullaby">✨ Lullaby Chime (Giai điệu nhắc ngủ)</option>
+                                </select>
+                                <button onclick="previewSelectedTone()" title="Nghe thử" class="p-2.5 bg-night-850 hover:bg-slate-800 border border-slate-700 rounded-xl text-cyan-400 text-xs">
+                                    <i class="fa-solid fa-volume-high"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-300 uppercase mb-2">Cảnh Báo Đệm Trước Giờ G:</label>
+                            <div class="flex items-center gap-4 text-xs text-slate-300 pt-2">
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" id="chk-prewarn-15" checked class="accent-purple-500"> Báo trước 15m (xả não)
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" id="chk-prewarn-5" checked class="accent-purple-500"> Báo trước 5m (uống nước)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Nút kích hoạt -->
+                    <div class="flex gap-3">
+                        <button onclick="activateMainTimer()" id="btn-activate-timer" class="flex-1 py-3.5 bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-600 hover:opacity-90 text-white font-bold text-xs sm:text-sm rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-shield-heart"></i> Kích Hoạt Giới Nghiêm & Bật Chuông
+                        </button>
+                        <button onclick="cancelActiveTimer()" id="btn-cancel-timer" class="px-5 py-3.5 bg-rose-950/40 hover:bg-rose-900/60 border border-rose-500/40 text-rose-300 text-xs font-semibold rounded-xl transition hidden">
+                            <i class="fa-solid fa-xmark mr-1"></i> Hủy
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Đồng Hồ Đếm Ngược Trực Quan (Cột phải 1 phần) -->
+                <div class="bg-night-900 p-6 rounded-3xl border border-slate-800 shadow-2xl flex flex-col justify-between items-center text-center space-y-6 glow-cyan">
+                    <div class="w-full flex items-center justify-between border-b border-slate-800 pb-3 text-xs">
+                        <span class="text-slate-400 uppercase font-semibold tracking-wider">Thời Gian Còn Lại</span>
+                        <span id="countdown-status-tag" class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400">Đang Chờ</span>
+                    </div>
+
+                    <!-- Màn hình số to khổng lồ -->
+                    <div class="my-auto space-y-2">
+                        <div id="countdown-clock-display" class="font-mono text-4xl sm:text-5xl font-extrabold text-white tracking-wider">
+                            00:00:00
+                        </div>
+                        <p id="target-time-subtext" class="text-xs text-slate-400 font-mono">Chưa kích hoạt hẹn giờ</p>
+                    </div>
+
+                    <!-- Thanh năng lượng tiến trình -->
+                    <div class="w-full space-y-2">
+                        <div class="w-full bg-night-950 h-2 rounded-full overflow-hidden border border-slate-800">
+                            <div id="countdown-progress-bar" class="bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-400 h-full w-0 transition-all duration-1000"></div>
+                        </div>
+                        <div class="flex justify-between text-[10px] text-slate-500 font-mono">
+                            <span>Bắt đầu</span>
+                            <span id="progress-percent">0%</span>
+                            <span>Giới nghiêm</span>
+                        </div>
+                    </div>
+
+                    <button onclick="testCurfewAlarm()" class="w-full py-2.5 bg-night-850 hover:bg-night-800 border border-slate-700 text-cyan-300 text-xs font-semibold rounded-xl transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-volume-high"></i> Thử Chuông Báo Động Ngay
+                    </button>
+                </div>
+            </div>
+
+            <!-- Bảng So Sánh Hai Trạng Thái -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                <div class="bg-night-900/90 rounded-2xl border border-rose-900/40 p-6 space-y-4">
+                    <div class="flex items-center justify-between border-b border-rose-900/40 pb-3">
+                        <div class="flex items-center gap-2 text-rose-400 font-bold">
+                            <i class="fa-solid fa-triangle-exclamation text-lg"></i>
+                            <h3 class="text-base">1. Revenge Bedtime Procrastination</h3>
+                        </div>
+                        <span class="text-[10px] font-bold bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded border border-rose-500/30 uppercase">Thức Trì Hoãn</span>
+                    </div>
+                    <ul class="space-y-3 text-xs text-slate-300">
+                        <li class="flex items-start gap-2.5">
+                            <i class="fa-solid fa-xmark text-rose-400 mt-0.5"></i>
+                            <span><strong>Lướt màn hình vô thức:</strong> Lướt mạng xã hội trên giường trong bóng tối mà không hề có kế hoạch dừng lại.</span>
+                        </li>
+                        <li class="flex items-start gap-2.5">
+                            <i class="fa-solid fa-xmark text-rose-400 mt-0.5"></i>
+                            <span><strong>Cảm giác tội lỗi:</strong> Càng thức muộn càng thấy áy náy cho buổi sáng mai nhưng tay không thể tắt máy.</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="bg-night-900/90 rounded-2xl border border-emerald-900/40 p-6 space-y-4 glow-cyan">
+                    <div class="flex items-center justify-between border-b border-emerald-900/40 pb-3">
+                        <div class="flex items-center gap-2 text-emerald-400 font-bold">
+                            <i class="fa-solid fa-circle-check text-lg"></i>
+                            <h3 class="text-base">2. Thức Khuya Chủ Động (Mindful Shift)</h3>
+                        </div>
+                        <span class="text-[10px] font-bold bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/30 uppercase">Làm Chủ Thời Gian</span>
+                    </div>
+                    <ul class="space-y-3 text-xs text-slate-300">
+                        <li class="flex items-start gap-2.5">
+                            <i class="fa-solid fa-check text-emerald-400 mt-0.5"></i>
+                            <span><strong>Có Giờ Giới Nghiêm (Curfew):</strong> Xác định rõ giờ kết thúc trước khi ngồi vào bàn học và cài chuông báo.</span>
+                        </li>
+                        <li class="flex items-start gap-2.5">
+                            <i class="fa-solid fa-check text-emerald-400 mt-0.5"></i>
+                            <span><strong>Căn chỉnh theo chu kỳ 90 phút:</strong> Luôn ngủ đúng bội số của chu kỳ để tỉnh giấc ở giai đoạn REM tỉnh táo.</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: CHẨN ĐOÁN HỘI CHỨNG BEDTIME PROCRASTINATION -->
+        <section id="section-diagnosis" class="tab-content hidden space-y-8">
+            <div class="bg-gradient-to-r from-night-850 to-night-900 p-6 rounded-2xl border border-slate-800">
+                <span class="px-3 py-1 bg-pink-500/20 text-pink-300 text-xs rounded-full border border-pink-500/30 uppercase font-semibold">Thang Đo Tâm Lý</span>
+                <h2 class="text-2xl font-bold mt-2 text-white">Trắc Nghiệm Chỉ Số Bedtime Procrastination (8 Câu)</h2>
+                <p class="text-slate-400 mt-1 text-xs sm:text-sm">Đo lường mức độ trì hoãn giờ ngủ và tự động kết nối hướng xử lý với AI.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2 bg-night-900 p-6 rounded-2xl border border-slate-800 space-y-6">
+                    <form id="diagnosis-form" onsubmit="calculateDiagnosis(event)" class="space-y-4">
+                        <div id="quiz-list" class="space-y-4"></div>
+                        <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-semibold rounded-xl text-xs sm:text-sm shadow-lg transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-chart-simple"></i> Phân Tích Kết Quả & Nhận Lộ Trình
+                        </button>
+                    </form>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="bg-night-900 p-6 rounded-2xl border border-slate-800 text-center">
+                        <h3 class="text-sm font-bold text-slate-300 mb-3">Cơ Cấu Lý Do Đi Ngủ Muộn</h3>
+                        <div class="relative h-56">
+                            <canvas id="diagnosisChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div id="diagnosis-result-card" class="bg-night-900 p-6 rounded-2xl border border-slate-800 space-y-3">
+                        <h4 class="text-xs font-bold text-cyan-300 uppercase tracking-wider">Đánh Giá Từ Hệ Thống</h4>
+                        <p class="text-xs text-slate-400 leading-relaxed" id="diag-summary-text">
+                            Hãy hoàn thành bảng 8 câu hỏi bên cạnh để xác định mức độ Bedtime Procrastination của bạn.
+                        </p>
+                        <button id="send-to-ai-btn" onclick="sendDiagnosticToAI()" class="w-full py-2.5 bg-purple-900/40 hover:bg-purple-900/70 border border-purple-500/40 text-purple-300 font-semibold text-xs rounded-xl transition hidden">
+                            <i class="fa-solid fa-robot mr-1.5"></i> Nhận Phác Đồ Điều Chỉnh Từ AI
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: ÂM THANH TẬP TRUNG THUẦN WEB AUDIO -->
+        <section id="section-soundspace" class="tab-content hidden space-y-8">
+            <div class="bg-night-900 p-6 lg:p-8 rounded-2xl border border-slate-800 shadow-xl">
+                <div class="max-w-2xl">
+                    <span class="text-cyan-400 text-xs uppercase font-bold tracking-widest">Web Audio API Synth</span>
+                    <h2 class="text-2xl lg:text-3xl font-bold text-white mt-1">Âm Thanh Học Tập Đêm Khuya</h2>
+                    <p class="text-slate-400 text-xs sm:text-sm mt-2">
+                        Âm thanh được tổng hợp trực tiếp bằng trình duyệt, giúp não thư giãn và kích hoạt trạng thái tập trung sâu (Alpha 40Hz).
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mt-8">
+                    <div class="bg-night-850 p-5 rounded-2xl border border-slate-800 flex flex-col justify-between space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div class="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-lg">
+                                <i class="fa-solid fa-cloud-rain"></i>
+                            </div>
+                            <button onclick="toggleAudioNode('rain')" id="audio-btn-rain" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-night-950 text-slate-300 border border-slate-700 hover:border-cyan-400">Bật</button>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-white text-sm">Tiếng Mưa Đêm</h4>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Tiếng mưa rào dịu êm át tạp âm</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-night-850 p-5 rounded-2xl border border-slate-800 flex flex-col justify-between space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div class="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center text-lg">
+                                <i class="fa-solid fa-wave-square"></i>
+                            </div>
+                            <button onclick="toggleAudioNode('alpha')" id="audio-btn-alpha" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-night-950 text-slate-300 border border-slate-700 hover:border-purple-400">Bật</button>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-white text-sm">Sóng Alpha 40Hz</h4>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Tối ưu trạng thái tập trung sâu</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-night-850 p-5 rounded-2xl border border-slate-800 flex flex-col justify-between space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-lg">
+                                <i class="fa-solid fa-fire"></i>
+                            </div>
+                            <button onclick="toggleAudioNode('fire')" id="audio-btn-fire" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-night-950 text-slate-300 border border-slate-700 hover:border-amber-400">Bật</button>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-white text-sm">Lửa Trại Tách Tách</h4>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Ấm cúng, giảm cảm giác căng thẳng</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-night-850 p-5 rounded-2xl border border-slate-800 flex flex-col justify-between space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-lg">
+                                <i class="fa-solid fa-seedling"></i>
+                            </div>
+                            <button onclick="toggleAudioNode('cricket')" id="audio-btn-cricket" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-night-950 text-slate-300 border border-slate-700 hover:border-emerald-400">Bật</button>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-white text-sm">Dế Đêm Thanh Bình</h4>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Làm dịu hệ thần kinh trước khi ngủ</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: TÍNH CHU KỲ 90 PHÚT -->
+        <section id="section-sleep-calc" class="tab-content hidden space-y-8">
+            <div class="bg-night-900 p-6 lg:p-8 rounded-2xl border border-slate-800 shadow-xl max-w-4xl mx-auto">
+                <div class="text-center max-w-xl mx-auto mb-8">
+                    <span class="text-indigo-400 text-xs uppercase font-bold tracking-widest">Khoa Học Giấc Ngủ</span>
+                    <h2 class="text-2xl font-bold text-white mt-1">Tính Chu Kỳ Giấc Ngủ (90 Phút)</h2>
+                    <p class="text-slate-400 text-xs mt-2">
+                        Thức giấc đúng điểm giao giữa các chu kỳ ngủ giúp bạn cảm thấy tỉnh táo tức thì.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-night-950 p-6 rounded-2xl border border-slate-800">
+                    <div class="space-y-3">
+                        <label class="block text-xs font-bold text-slate-300 uppercase">1. Ngày mai tôi cần thức dậy lúc:</label>
+                        <input type="time" id="calc-wake-target" value="06:00" class="w-full bg-night-900 border border-slate-700 rounded-xl p-3 text-cyan-300 font-mono text-base focus:border-cyan-500 focus:outline-none">
+                        <button onclick="calcBedtimeSlots()" class="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold text-xs rounded-xl shadow-lg transition">
+                            Tính các mốc giờ nên lên giường
+                        </button>
+                    </div>
+
+                    <div class="space-y-3">
+                        <label class="block text-xs font-bold text-slate-300 uppercase">2. Nếu tôi buông điện thoại đi ngủ NGAY BÂY GIỜ:</label>
+                        <p class="text-xs text-slate-400">(Hệ thống tự động cộng thêm 14 phút ru ngủ sinh lý)</p>
+                        <button onclick="calcWaketimeSlotsNow()" class="w-full mt-4 py-3 bg-gradient-to-r from-cyan-600 to-emerald-600 hover:from-cyan-500 hover:to-emerald-500 text-white font-semibold text-xs rounded-xl shadow-lg transition">
+                            Tính các mốc giờ nên đặt chuông báo thức
+                        </button>
+                    </div>
+                </div>
+
+                <div id="sleep-slots-container" class="mt-8 hidden space-y-4">
+                    <h4 class="text-xs font-bold text-purple-300 uppercase border-b border-slate-800 pb-2 flex items-center justify-between">
+                        <span>Các Mốc Giờ Tối Ưu:</span>
+                        <span class="text-slate-400 lowercase font-normal">(khuyên chọn 4 hoặc 5 chu kỳ)</span>
+                    </h4>
+                    <div id="sleep-slots-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-4"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 5: BỘ CỨU HỘ & BIO-HACKS CÚ ĐÊM -->
+        <section id="section-biohacks" class="tab-content hidden space-y-8">
+            <div class="text-center max-w-2xl mx-auto">
+                <span class="text-emerald-400 text-xs uppercase font-bold tracking-widest">Sức Bền & Thể Chất Sĩ Tử</span>
+                <h2 class="text-2xl lg:text-3xl font-bold text-white mt-1">Cẩm Nang Sức Khỏe Cho Cú Đêm THPT</h2>
+                <p class="text-slate-400 text-xs mt-2">Duy trì sự minh mẫn và hạn chế tác hại khi phải học đêm dài.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-night-900 p-6 rounded-2xl border border-slate-800 space-y-4 hover:border-emerald-500/40 transition">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-apple-whole"></i>
+                    </div>
+                    <h3 class="font-bold text-white text-base">Dinh Dưỡng Đúng Cách</h3>
+                    <div class="space-y-2 text-xs text-slate-300 leading-relaxed">
+                        <p><strong class="text-emerald-300">Nên dùng:</strong> Nước ấm ngụm nhỏ, các loại hạt khô (hạnh nhân, hạt điều), 1/2 quả chuối để bổ sung khoáng chất.</p>
+                        <p><strong class="text-rose-400">Tránh xa:</strong> Mì tôm, đồ chiên rán, và nước tăng lực sau 21h (tránh kích tim và gây trào ngược dạ dày khi nằm ngủ).</p>
+                    </div>
+                </div>
+
+                <div class="bg-night-900 p-6 rounded-2xl border border-slate-800 space-y-4 hover:border-cyan-500/40 transition">
+                    <div class="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-eye"></i>
+                    </div>
+                    <h3 class="font-bold text-white text-base">Quy Tắc Mắt 20-20-20</h3>
+                    <div class="space-y-2 text-xs text-slate-300 leading-relaxed">
+                        <p><strong class="text-cyan-300">Quy tắc vàng:</strong> Cứ 20 phút nhìn màn hình/sách, phóng tầm mắt ra xa 20 feet (6m) trong 20 giây để điều tiết mắt.</p>
+                        <p><strong class="text-amber-300">Ánh sáng:</strong> Kết hợp đèn bàn vàng cùng đèn trần dịu, không học trong phòng tối thui chỉ có mỗi ánh sáng màn hình.</p>
+                    </div>
+                </div>
+
+                <div class="bg-night-900 p-6 rounded-2xl border border-slate-800 space-y-4 hover:border-purple-500/40 transition">
+                    <div class="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-bed"></i>
+                    </div>
+                    <h3 class="font-bold text-white text-base">Quy Trình 10 Phút Trước Khi Ngủ</h3>
+                    <div class="space-y-2 text-xs text-slate-300 leading-relaxed">
+                        <p><strong class="text-purple-300">Viết xả não (Brain-dump):</strong> Liệt kê 3 việc quan trọng nhất cho ngày mai ra một cuốn sổ để não yên tâm thả lỏng.</p>
+                        <p><strong class="text-slate-200">Kỹ thuật thở 4-7-8:</strong> Hít sâu 4s, nín thở 7s, thở từ từ bằng miệng 8s để kích hoạt hệ phó giao cảm đưa bạn vào giấc ngủ êm.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 6: SIÊU TRỢ LÝ AI CHUYÊN SÂU (GEMINI 2.5 FLASH) -->
+        <section id="section-ai-coach" class="tab-content hidden space-y-8">
+            <div class="bg-night-900 p-6 rounded-3xl border border-slate-800 shadow-2xl max-w-4xl mx-auto space-y-6">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-600 to-cyan-500 flex items-center justify-center text-white text-xl shadow-lg shadow-purple-500/30">
+                            <i class="fa-solid fa-brain"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="text-lg font-bold text-white">Bedtime Procrastination AI Coach</h3>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">Gemini 2.5 Flash</span>
+                            </div>
+                            <p class="text-xs text-slate-400 mt-0.5">Tư vấn nhịp sinh học, khắc phục trì hoãn giờ ngủ & cân bằng lịch ôn thi</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 bg-night-950 px-3 py-1.5 rounded-xl border border-purple-500/30">
+                        <i class="fa-solid fa-key text-purple-400 text-xs"></i>
+                        <input type="password" id="gemini-api-key" placeholder="Nhập Gemini API Key (tùy chọn)..." class="bg-transparent text-xs text-white focus:outline-none w-48" onchange="saveApiKey(this.value)">
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Chọn Chuyên Viên Hỗ Trợ:</label>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                        <button onclick="setPersona('doctor')" id="persona-btn-doctor" class="persona-btn p-2 rounded-xl border border-purple-500/50 bg-purple-900/30 text-purple-200 font-medium flex items-center gap-2">
+                            <i class="fa-solid fa-user-doctor text-purple-400"></i> Bác Sĩ Nhịp Ngủ
+                        </button>
+                        <button onclick="setPersona('deepwork')" id="persona-btn-deepwork" class="persona-btn p-2 rounded-xl border border-slate-700 bg-night-950 text-slate-400 hover:text-slate-200 font-medium flex items-center gap-2">
+                            <i class="fa-solid fa-bolt text-amber-400"></i> Chiến Thần Deep Work
+                        </button>
+                        <button onclick="setPersona('anxiety')" id="persona-btn-anxiety" class="persona-btn p-2 rounded-xl border border-slate-700 bg-night-950 text-slate-400 hover:text-slate-200 font-medium flex items-center gap-2">
+                            <i class="fa-solid fa-heart-pulse text-pink-400"></i> Hạ Nhiệt Lo Âu
+                        </button>
+                        <button onclick="setPersona('emergency')" id="persona-btn-emergency" class="persona-btn p-2 rounded-xl border border-slate-700 bg-night-950 text-slate-400 hover:text-slate-200 font-medium flex items-center gap-2">
+                            <i class="fa-solid fa-truck-medical text-rose-400"></i> Cứu Hộ Buồn Ngủ (911)
+                        </button>
+                    </div>
+                </div>
+
+                <div id="ai-chat-box" class="h-96 overflow-y-auto space-y-4 pr-2 bg-night-950/70 p-4 rounded-2xl border border-slate-800">
+                    <div class="flex gap-3">
+                        <div class="w-8 h-8 rounded-full bg-purple-600/30 text-purple-300 flex items-center justify-center text-xs flex-shrink-0">
+                            <i class="fa-solid fa-robot"></i>
+                        </div>
+                        <div class="bg-night-900 border border-slate-800 p-3.5 rounded-2xl rounded-tl-none text-xs text-slate-200 max-w-[88%] leading-relaxed ai-content">
+                            Chào bạn, mình là trợ lý từ <strong>Bedtime Procrastination THPT</strong>. Bạn đang bị cuốn vào việc lướt điện thoại đêm muộn, hay đang cần một kế hoạch tắt máy đi ngủ an toàn tối nay?
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap gap-2 pt-1">
+                    <button onclick="quickPrompt('Mình hay có cảm giác tiếc buổi tối nên không nỡ ngủ, làm sao để vượt qua?')" class="text-[11px] bg-night-850 hover:bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-slate-300 transition">
+                        🌙 Tiếc buổi tối không nỡ ngủ?
+                    </button>
+                    <button onclick="quickPrompt('Gợi ý cho mình bài tập thở 3 phút để dễ chìm vào giấc ngủ.')" class="text-[11px] bg-night-850 hover:bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-slate-300 transition">
+                        🌬️ Thở 3 phút vào giấc ngủ
+                    </button>
+                    <button onclick="quickPrompt('Đêm nay mình buộc phải thức đến 1h sáng ôn Toán, hãy cho mình lịch phân bổ hợp lý.')" class="text-[11px] bg-night-850 hover:bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-slate-300 transition">
+                        📐 Kế hoạch học đêm đến 1h
+                    </button>
+                    <button onclick="quickPrompt('Sáng mai thi mà giờ đầu óc đang bồn chồn lo lắng quá, hãy giúp mình hạ nhiệt.')" class="text-[11px] bg-night-850 hover:bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-rose-300 transition">
+                        🆘 Lo âu trước ngày thi
+                    </button>
+                </div>
+
+                <div class="flex gap-2">
+                    <input type="text" id="ai-user-input" placeholder="Hỏi AI về cách khắc phục Bedtime Procrastination, lịch học hoặc giấc ngủ..." class="flex-1 bg-night-950 border border-slate-700 rounded-xl px-4 py-3 text-xs sm:text-sm text-white focus:outline-none focus:border-purple-500" onkeypress="if(event.key==='Enter') sendAiMessage()">
+                    <button onclick="sendAiMessage()" id="ai-send-btn" class="px-6 py-3 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 text-white font-semibold rounded-xl text-xs sm:text-sm transition flex items-center justify-center shadow-lg">
+                        <i class="fa-solid fa-paper-plane mr-1.5"></i> Gửi
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-night-950 border-t border-slate-800/80 py-6 mt-12">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500 space-y-2">
+            <p class="font-medium text-slate-400">Bedtime Procrastination THPT Hub - Dự Án Quản Lý Giấc Ngủ & Thức Khuya Khoa Học Cho Học Sinh</p>
+            <p>© 2026 Bedtime Procrastination Hub. Đồng hành vì sức khỏe và sự tập trung của sĩ tử.</p>
+        </div>
+    </footer>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('text-purple-300', 'bg-purple-900/30', 'border', 'border-purple-500/40');
+                btn.classList.add('text-slate-400');
+            });
+
+            const activeSection = document.getElementById(`section-${tabId}`);
+            if (activeSection) activeSection.classList.remove('hidden');
+
+            const activeBtn = document.getElementById(`tab-btn-${tabId}`);
+            if (activeBtn) {
+                activeBtn.classList.add('text-purple-300', 'bg-purple-900/30', 'border', 'border-purple-500/40');
+                activeBtn.classList.remove('text-slate-400');
+            }
+        }
+
+        function toggleMobileMenu() {
+            document.getElementById('mobile-menu').classList.toggle('hidden');
+        }
+
+        // ==========================================
+        // SMART TIMER & CURFEW ENGINE (NÂNG CẤP)
+        // ==========================================
+        let timerSubMode = 'curfew'; // 'curfew' | 'nap' | 'countdown'
+        let targetTimestamp = null;
+        let timerStartTimestamp = null;
+        let timerInterval = null;
+        let isCurfewTriggered = false;
+        let alarmAudioInterval = null;
+        let prewarn15Triggered = false;
+        let prewarn5Triggered = false;
+        let napChosenMinutes = 90;
+        let snoozeCount = 0;
+
+        function setTimerSubMode(mode) {
+            timerSubMode = mode;
+            ['curfew', 'nap', 'countdown'].forEach(m => {
+                const btn = document.getElementById(`timer-sub-${m}`);
+                const panel = document.getElementById(`panel-${m}`);
+                if (m === mode) {
+                    btn.className = "flex-1 py-2 rounded-xl transition bg-purple-600 text-white font-semibold";
+                    panel.classList.remove('hidden');
+                } else {
+                    btn.className = "flex-1 py-2 rounded-xl transition text-slate-400 hover:text-white";
+                    panel.classList.add('hidden');
+                }
+            });
+        }
+
+        function setNapDuration(mins) {
+            napChosenMinutes = mins;
+            [20, 45, 90].forEach(m => {
+                const btn = document.getElementById(`nap-btn-${m}`);
+                if (m === mins) {
+                    btn.className = "p-3 bg-night-950 border border-cyan-500/80 bg-cyan-950/30 rounded-xl text-center transition";
+                } else {
+                    btn.className = "p-3 bg-night-950 border border-slate-800 rounded-xl text-center hover:border-cyan-500 transition";
+                }
+            });
+        }
+
+        async function requestNotificationPermission() {
+            if ("Notification" in window && Notification.permission === "default") {
+                await Notification.requestPermission();
+            }
+        }
+
+        function triggerPushNotification(title, message) {
+            if ("Notification" in window && Notification.permission === "granted") {
+                try {
+                    new Notification(title, {
+                        body: message,
+                        icon: "https://placehold.co/128x128/1e1b4b/a855f7?text=SLEEP",
+                        vibrate: [300, 150, 300, 150, 600]
+                    });
+                } catch (e) {
+                    console.log(e);
+                }
+            }
+        }
+
+        function triggerPhoneVibrate() {
+            if ("vibrate" in navigator) {
+                navigator.vibrate([400, 200, 400, 200, 800]);
+            }
+        }
+
+        // Web Audio Synthesizer: 4 Kiểu Chuông
+        function playTone(type) {
+            const ctx = getAudioContext();
+            const now = ctx.currentTime;
+
+            if (type === 'cyber') {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(800, now);
+                osc.frequency.exponentialRampToValueAtTime(1400, now + 0.2);
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.35);
+            } else if (type === 'zen') {
+                // Tibetan Bowl harmonic
+                [432, 864, 1296].forEach((freq, idx) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now);
+                    gain.gain.setValueAtTime(0.2 / (idx + 1), now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 2.0);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 2.0);
+                });
+            } else if (type === 'digital') {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(1000, now);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.15);
+            } else if (type === 'lullaby') {
+                const notes = [523.25, 659.25, 783.99, 1046.50]; // C - E - G - C
+                notes.forEach((freq, i) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now + i * 0.18);
+                    gain.gain.setValueAtTime(0.2, now + i * 0.18);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.18 + 0.5);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now + i * 0.18);
+                    osc.stop(now + i * 0.18 + 0.5);
+                });
+            }
+        }
+
+        function previewSelectedTone() {
+            getAudioContext();
+            const tone = document.getElementById('alarm-sound-tone').value;
+            playTone(tone);
+        }
+
+        function startAlarmLoop() {
+            const tone = document.getElementById('alarm-sound-tone').value;
+            playTone(tone);
+            if (alarmAudioInterval) clearInterval(alarmAudioInterval);
+            alarmAudioInterval = setInterval(() => {
+                playTone(tone);
+            }, tone === 'zen' ? 2200 : 1200);
+        }
+
+        function stopAlarmLoop() {
+            if (alarmAudioInterval) {
+                clearInterval(alarmAudioInterval);
+                alarmAudioInterval = null;
+            }
+        }
+
+        // Kích hoạt hẹn giờ chính
+        async function activateMainTimer() {
+            await requestNotificationPermission();
+            getAudioContext();
+
+            const now = new Date();
+            timerStartTimestamp = now.getTime();
+            let target = new Date();
+
+            if (timerSubMode === 'curfew') {
+                const custom = document.getElementById('curfew-custom-input').value;
+                const preset = document.getElementById('curfew-preset-select').value;
+                const chosenTime = custom || preset;
+                const [h, m] = chosenTime.split(':').map(Number);
+                
+                target.setHours(h, m, 0, 0);
+                if (target <= now) {
+                    target.setDate(target.getDate() + 1); // Đặt cho rạng sáng hôm sau
+                }
+            } else if (timerSubMode === 'nap') {
+                target = new Date(now.getTime() + napChosenMinutes * 60 * 1000);
+            } else if (timerSubMode === 'countdown') {
+                const mins = parseInt(document.getElementById('countdown-minutes-input').value) || 45;
+                target = new Date(now.getTime() + mins * 60 * 1000);
+            }
+
+            targetTimestamp = target.getTime();
+            isCurfewTriggered = false;
+            prewarn15Triggered = false;
+            prewarn5Triggered = false;
+            snoozeCount = 0;
+
+            // UI
+            document.getElementById('countdown-status-tag').innerText = "Đang Chạy";
+            document.getElementById('countdown-status-tag').className = "px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 animate-pulse";
+            document.getElementById('btn-cancel-timer').classList.remove('hidden');
+            document.getElementById('btn-activate-timer').classList.add('opacity-50');
+
+            const hStr = String(target.getHours()).padStart(2, '0');
+            const mStr = String(target.getMinutes()).padStart(2, '0');
+            document.getElementById('target-time-subtext').innerText = `Mốc báo động: ${hStr}:${mStr}`;
+
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(updateTimerCountdown, 1000);
+            updateTimerCountdown();
+
+            alert(`✅ Đã hẹn giờ thành công!\nMốc chuông báo lúc ${hStr}:${mStr}. Hệ thống sẽ nhắc bạn trước giờ G.`);
+        }
+
+        function updateTimerCountdown() {
+            if (!targetTimestamp) return;
+
+            const now = Date.now();
+            const diff = targetTimestamp - now;
+
+            if (diff <= 0) {
+                // Đến giờ!
+                clearInterval(timerInterval);
+                document.getElementById('countdown-clock-display').innerText = "00:00:00";
+                document.getElementById('countdown-progress-bar').style.width = "100%";
+                document.getElementById('progress-percent').innerText = "100%";
+                fireAlarmTrigger();
+                return;
+            }
+
+            // Tính toán giờ : phút : giây
+            const totalSecs = Math.floor(diff / 1000);
+            const h = Math.floor(totalSecs / 3600);
+            const m = Math.floor((totalSecs % 3600) / 60);
+            const s = totalSecs % 60;
+
+            document.getElementById('countdown-clock-display').innerText = 
+                `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+
+            // Tiến trình %
+            const totalDuration = targetTimestamp - timerStartTimestamp;
+            const elapsed = now - timerStartTimestamp;
+            const percent = Math.min(100, Math.max(0, Math.floor((elapsed / totalDuration) * 100)));
+            document.getElementById('countdown-progress-bar').style.width = `${percent}%`;
+            document.getElementById('progress-percent').innerText = `${percent}%`;
+
+            // Kiểm tra cảnh báo đệm 15 phút
+            const minsLeft = diff / (60 * 1000);
+            const check15 = document.getElementById('chk-prewarn-15').checked;
+            const check5 = document.getElementById('chk-prewarn-5').checked;
+
+            if (check15 && minsLeft <= 15 && !prewarn15Triggered) {
+                prewarn15Triggered = true;
+                playTone('lullaby');
+                triggerPushNotification("🌙 Còn 15 phút tới giờ ngủ", "Hãy dừng nhận thêm bài mới. Viết 3 điều cần làm sáng mai ra giấy (Brain-dump) nhé!");
+            }
+
+            // Kiểm tra cảnh báo đệm 5 phút
+            if (check5 && minsLeft <= 5 && !prewarn5Triggered) {
+                prewarn5Triggered = true;
+                playTone('digital');
+                triggerPushNotification("💧 Còn 5 phút cuối!", "Uống 1 ngụm nước ấm, gập màn hình laptop và hạ ánh sáng phòng.");
+            }
+        }
+
+        function fireAlarmTrigger() {
+            isCurfewTriggered = true;
+            const targetDate = new Date(targetTimestamp);
+            const timeStr = `${String(targetDate.getHours()).padStart(2, '0')}:${String(targetDate.getMinutes()).padStart(2, '0')}`;
+            
+            document.getElementById('alarm-curfew-display').innerText = timeStr;
+            document.getElementById('curfew-alarm-modal').classList.remove('hidden');
+
+            startAlarmLoop();
+            triggerPhoneVibrate();
+            triggerPushNotification(
+                "🚨 ĐÃ ĐẾN GIỜ ĐI NGỦ!", 
+                "Chạm mốc giới nghiêm. Tắt máy và đi ngủ ngay để bảo toàn chu kỳ ngủ!"
+            );
+        }
+
+        function dismissCurfewAlarm(success = true) {
+            stopAlarmLoop();
+            document.getElementById('curfew-alarm-modal').classList.add('hidden');
+            cancelActiveTimer();
+
+            if (success) {
+                let streak = parseInt(localStorage.getItem('bedtime_streak_days') || '0');
+                streak += 1;
+                localStorage.setItem('bedtime_streak_days', streak);
+                document.getElementById('streak-counter').innerText = `${streak} Ngày`;
+                alert("🎉 Tuyệt vời! Bạn đã bảo vệ giấc ngủ thành công. Chúc bạn có một giấc ngủ thật ngon!");
+            }
+        }
+
+        function snoozeCurfewAlarm() {
+            if (snoozeCount >= 1) {
+                alert("⚠️ Bạn đã dùng hết quyền hoãn! Hãy đi ngủ ngay để tránh bị đau đầu sáng mai.");
+                return;
+            }
+            snoozeCount++;
+            stopAlarmLoop();
+            document.getElementById('curfew-alarm-modal').classList.add('hidden');
+
+            // Thêm đúng 5 phút
+            timerStartTimestamp = Date.now();
+            targetTimestamp = Date.now() + 5 * 60 * 1000;
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(updateTimerCountdown, 1000);
+            updateTimerCountdown();
+
+            alert("⏳ Đã gia hạn đúng 5 phút. Hãy thu dọn bàn học ngay lập tức!");
+        }
+
+        function cancelActiveTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            stopAlarmLoop();
+            targetTimestamp = null;
+            timerInterval = null;
+
+            document.getElementById('countdown-clock-display').innerText = "00:00:00";
+            document.getElementById('target-time-subtext').innerText = "Hẹn giờ đã tắt";
+            document.getElementById('countdown-progress-bar').style.width = "0%";
+            document.getElementById('progress-percent').innerText = "0%";
+            document.getElementById('countdown-status-tag').innerText = "Đã Dừng";
+            document.getElementById('countdown-status-tag').className = "px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400";
+            document.getElementById('btn-cancel-timer').classList.add('hidden');
+            document.getElementById('btn-activate-timer').classList.remove('opacity-50');
+        }
+
+        async function testCurfewAlarm() {
+            await requestNotificationPermission();
+            getAudioContext();
+            targetTimestamp = Date.now();
+            fireAlarmTrigger();
+        }
+
+        // ==========================================
+        // CÁC HÀM CŨ (KHẢO SÁT, SOUND SYNTH, SLEEP CALC, AI)
+        // ==========================================
+        function updateCircadianClock() {
+            const now = new Date();
+            const h = now.getHours();
+            const m = now.getMinutes();
+            const s = now.getSeconds();
+            const currentTimeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+            
+            document.getElementById('realtime-clock').innerHTML = `<i class="fa-regular fa-clock mr-1"></i> ${currentTimeStr}:${String(s).padStart(2, '0')}`;
+
+            const badge = document.getElementById('circadian-badge');
+            if (h >= 21 && h < 23) {
+                badge.innerText = "21h-23h: Melatonin bắt đầu tiết ra - Giảm ánh sáng xanh ngay";
+                badge.className = "text-purple-300 font-medium hidden sm:inline";
+            } else if (h >= 23 || h < 1) {
+                badge.innerText = "23h-01h: Giai đoạn Deep Sleep quan trọng - Tránh Bedtime Procrastination";
+                badge.className = "text-amber-300 font-medium hidden sm:inline";
+            } else if (h >= 1 && h < 5) {
+                badge.innerText = "01h-05h: Vùng đỏ sinh học - Hãy đi ngủ ngay để não đào thải độc tố!";
+                badge.className = "text-rose-400 font-semibold hidden sm:inline animate-pulse";
+            } else {
+                badge.innerText = "Ban ngày: Năng lượng tỉnh táo - Nhớ tiếp xúc ánh nắng 15 phút";
+                badge.className = "text-emerald-300 font-medium hidden sm:inline";
+            }
+        }
+        setInterval(updateCircadianClock, 1000);
+        updateCircadianClock();
+
+        const quizData = [
+            "1. Bạn có thường xuyên đi ngủ muộn hơn dự định dù không có ai bắt buộc?",
+            "2. Ban ngày bạn cảm thấy thời gian bị chiếm trọn bởi lịch học trên lớp và các lớp học thêm?",
+            "3. Bạn thức khuya chủ yếu để lướt mạng xã hội, xem video nhằm bù đắp cảm giác tự do?",
+            "4. Bạn nhận thức rõ việc thức muộn sẽ khiến sáng mai mệt mỏi nhưng vẫn không nỡ buông máy?",
+            "5. Bạn có thói quen cầm điện thoại lên giường ngủ trong căn phòng tối?",
+            "6. Bạn thường xuyên bấm hoãn báo thức (Snooze) nhiều lần vào buổi sáng?",
+            "7. Bạn có cảm giác áy náy, bồn chồn khi nhận ra đêm đã quá muộn mà mình vẫn chưa ngủ?",
+            "8. Bạn có muốn thiết lập một giờ giới nghiêm cố định để kiểm soát lại giấc ngủ?"
+        ];
+
+        let diagChartInstance = null;
+        let lastDiagScore = 0;
+
+        function initQuiz() {
+            const container = document.getElementById('quiz-list');
+            if (!container) return;
+            container.innerHTML = quizData.map((q, i) => `
+                <div class="p-3.5 bg-night-950 rounded-xl border border-slate-800">
+                    <p class="text-xs text-slate-200 font-medium mb-2.5">${q}</p>
+                    <div class="flex gap-6 text-xs text-slate-400">
+                        <label class="flex items-center gap-2 cursor-pointer hover:text-pink-300">
+                            <input type="radio" name="diag_${i}" value="yes" required class="accent-pink-500"> Có / Thường xuyên
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer hover:text-slate-200">
+                            <input type="radio" name="diag_${i}" value="no" class="accent-pink-500"> Không / Hiếm khi
+                        </label>
+                    </div>
+                </div>
+            `).join('');
+
+            initDiagChart([50, 35, 15]);
+        }
+
+        function initDiagChart(dataArr) {
+            const ctx = document.getElementById('diagnosisChart')?.getContext('2d');
+            if (!ctx) return;
+            if (diagChartInstance) diagChartInstance.destroy();
+
+            diagChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Revenge Bedtime Procrastination', 'Áp lực học tập / Deadline', 'Khó ngủ sinh lý'],
+                    datasets: [{
+                        data: dataArr,
+                        backgroundColor: ['#F43F5E', '#8B5CF6', '#06B6D4'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: '#94A3B8', font: { size: 10 } } }
+                    }
+                }
+            });
+        }
+
+        function calculateDiagnosis(e) {
+            e.preventDefault();
+            let yesCount = 0;
+            quizData.forEach((_, i) => {
+                const checked = document.querySelector(`input[name="diag_${i}"]:checked`);
+                if (checked && checked.value === 'yes') yesCount++;
+            });
+            lastDiagScore = yesCount;
+
+            const summary = document.getElementById('diag-summary-text');
+            const aiBtn = document.getElementById('send-to-ai-btn');
+            aiBtn.classList.remove('hidden');
+
+            if (yesCount >= 6) {
+                summary.innerHTML = `<span class="text-rose-400 font-bold">Mức độ Bedtime Procrastination Cao (${yesCount}/8):</span> Bạn đang có xu hướng trì hoãn giờ ngủ để tìm tự do sau cả ngày bận rộn. Bật chuông giới nghiêm là biện pháp tối ưu ngay lúc này!`;
+                initDiagChart([70, 20, 10]);
+            } else if (yesCount >= 3) {
+                summary.innerHTML = `<span class="text-amber-400 font-bold">Mức độ Trung bình (${yesCount}/8):</span> Bạn thỉnh thoảng nấn ná giờ ngủ. Khóa giờ Curfew 00:30 sẽ giúp bạn duy trì nhịp tốt.`;
+                initDiagChart([45, 40, 15]);
+            } else {
+                summary.innerHTML = `<span class="text-emerald-400 font-bold">Mức độ Thấp (${yesCount}/8):</span> Bạn kiểm soát thói quen ngủ rất tốt!`;
+                initDiagChart([20, 60, 20]);
+            }
+        }
+
+        function sendDiagnosticToAI() {
+            switchTab('ai-coach');
+            setPersona('doctor');
+            const prompt = `Chỉ số Bedtime Procrastination của mình là ${lastDiagScore}/8 điểm. Hãy phân tích cơ chế tâm lý và hướng dẫn cho mình một lộ trình 3 bước để chủ động đi ngủ đúng giờ mà không bị cảm giác bứt rứt.`;
+            document.getElementById('ai-user-input').value = prompt;
+            sendAiMessage();
+        }
+
+        // Web Audio Synthesizer (Âm thanh học đêm)
+        let audioContext = null;
+        let activeNodes = {};
+
+        function getAudioContext() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            return audioContext;
+        }
+
+        function toggleAudioNode(type) {
+            const ctx = getAudioContext();
+            const btn = document.getElementById(`audio-btn-${type}`);
+
+            if (activeNodes[type]) {
+                activeNodes[type].stop();
+                delete activeNodes[type];
+                btn.innerText = "Bật";
+                btn.classList.remove('bg-purple-600', 'text-white');
+            } else {
+                let node;
+                if (type === 'rain') {
+                    let bufferSize = ctx.sampleRate * 2;
+                    let buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+                    let data = buffer.getChannelData(0);
+                    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+                    let source = ctx.createBufferSource();
+                    source.buffer = buffer;
+                    source.loop = true;
+
+                    let filter = ctx.createBiquadFilter();
+                    filter.type = 'lowpass';
+                    filter.frequency.value = 750;
+
+                    let gain = ctx.createGain();
+                    gain.gain.value = 0.15;
+
+                    source.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(ctx.destination);
+                    source.start();
+                    node = source;
+                } else if (type === 'alpha') {
+                    let osc = ctx.createOscillator();
+                    osc.type = 'sine';
+                    osc.frequency.value = 40;
+
+                    let gain = ctx.createGain();
+                    gain.gain.value = 0.25;
+
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start();
+                    node = osc;
+                } else if (type === 'fire') {
+                    let bufferSize = ctx.sampleRate * 2;
+                    let buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+                    let data = buffer.getChannelData(0);
+                    for (let i = 0; i < bufferSize; i++) {
+                        data[i] = (Math.random() > 0.985) ? (Math.random() * 2 - 1) * 2 : (Math.random() * 0.1);
+                    }
+                    let source = ctx.createBufferSource();
+                    source.buffer = buffer;
+                    source.loop = true;
+
+                    let filter = ctx.createBiquadFilter();
+                    filter.type = 'bandpass';
+                    filter.frequency.value = 1200;
+
+                    let gain = ctx.createGain();
+                    gain.gain.value = 0.2;
+
+                    source.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(ctx.destination);
+                    source.start();
+                    node = source;
+                } else if (type === 'cricket') {
+                    let osc = ctx.createOscillator();
+                    osc.type = 'triangle';
+                    osc.frequency.value = 4500;
+
+                    let gain = ctx.createGain();
+                    gain.gain.value = 0.04;
+
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start();
+                    node = osc;
+                }
+
+                activeNodes[type] = node;
+                btn.innerText = "Tắt";
+                btn.classList.add('bg-purple-600', 'text-white');
+            }
+        }
+
+        // Tính chu kỳ ngủ 90 phút
+        function renderSleepSlots(slots) {
+            const container = document.getElementById('sleep-slots-grid');
+            document.getElementById('sleep-slots-container').classList.remove('hidden');
+
+            container.innerHTML = slots.map(s => `
+                <div class="bg-night-850 border ${s.recommended ? 'border-cyan-400 glow-cyan' : 'border-slate-800'} p-3.5 rounded-xl text-center">
+                    <span class="text-xl font-bold font-mono text-cyan-300 block">${s.time}</span>
+                    <span class="text-[11px] text-slate-300 font-semibold block mt-1">${s.cycles} chu kỳ (${s.hours}h ngủ)</span>
+                    <span class="text-[10px] text-slate-500 block mt-0.5">${s.desc}</span>
+                </div>
+            `).join('');
+        }
+
+        function calcBedtimeSlots() {
+            const wakeVal = document.getElementById('calc-wake-target').value;
+            if (!wakeVal) return;
+            const [h, m] = wakeVal.split(':').map(Number);
+            let wakeDate = new Date();
+            wakeDate.setHours(h, m, 0, 0);
+
+            let slots = [];
+            [6, 5, 4, 3].forEach(cycles => {
+                let bedDate = new Date(wakeDate.getTime() - (cycles * 90 * 60 * 1000) - (14 * 60 * 1000));
+                let hStr = String(bedDate.getHours()).padStart(2, '0');
+                let mStr = String(bedDate.getMinutes()).padStart(2, '0');
+                slots.push({
+                    time: `${hStr}:${mStr}`,
+                    cycles: cycles,
+                    hours: (cycles * 1.5).toFixed(1),
+                    recommended: cycles === 5,
+                    desc: cycles === 5 ? 'Tối ưu tuyệt đối' : cycles === 4 ? 'Đủ duy trì' : 'Chỉ dùng khi cấp bách'
+                });
+            });
+            renderSleepSlots(slots);
+        }
+
+        function calcWaketimeSlotsNow() {
+            let now = new Date();
+            let slots = [];
+            [3, 4, 5, 6].forEach(cycles => {
+                let wakeDate = new Date(now.getTime() + (cycles * 90 * 60 * 1000) + (14 * 60 * 1000));
+                let hStr = String(wakeDate.getHours()).padStart(2, '0');
+                let mStr = String(wakeDate.getMinutes()).padStart(2, '0');
+                slots.push({
+                    time: `${hStr}:${mStr}`,
+                    cycles: cycles,
+                    hours: (cycles * 1.5).toFixed(1),
+                    recommended: cycles === 5,
+                    desc: cycles === 5 ? 'Lý tưởng nhất' : cycles === 4 ? 'Khá tỉnh táo' : 'Chợp mắt ngắn'
+                });
+            });
+            renderSleepSlots(slots);
+        }
+
+        // AI Multi-Persona Integration
+        let currentPersona = 'doctor';
+        let conversationHistory = [];
+
+        const personasConfig = {
+            doctor: {
+                name: "Bác Sĩ Nhịp Ngủ",
+                system: "Bạn là Bác sĩ chuyên khoa thần kinh & Nhịp sinh học giấc ngủ, chuyên hỗ trợ Bedtime Procrastination cho học sinh THPT. Dùng markdown phong phú, gạch đầu dòng rõ ràng."
+            },
+            deepwork: {
+                name: "Chiến Thần Deep Work",
+                system: "Bạn là Chuyên gia tối ưu hiệu suất học đêm & Deep Work cho sĩ tử cấp 3. Giúp học sinh dứt điểm môn khó và đi ngủ đúng giờ giới nghiêm."
+            },
+            anxiety: {
+                name: "Hạ Nhiệt Lo Âu",
+                system: "Bạn là Chuyên gia tâm lý học đường, lắng nghe và xoa dịu cảm giác lo âu, cảm giác tội lỗi khi thức muộn."
+            },
+            emergency: {
+                name: "Cứu Hộ Buồn Ngủ (911)",
+                system: "Bạn là Đội cứu hộ khẩn cấp lúc nửa đêm. Nếu học sinh quá mệt, hãy kiên quyết khuyên đi ngủ ngay."
+            }
+        };
+
+        function setPersona(pKey) {
+            currentPersona = pKey;
+            document.querySelectorAll('.persona-btn').forEach(btn => {
+                btn.className = "persona-btn p-2 rounded-xl border border-slate-700 bg-night-950 text-slate-400 hover:text-slate-200 font-medium flex items-center gap-2";
+            });
+            const activeBtn = document.getElementById(`persona-btn-${pKey}`);
+            if (activeBtn) {
+                activeBtn.className = "persona-btn p-2 rounded-xl border border-purple-500/50 bg-purple-900/30 text-purple-200 font-medium flex items-center gap-2";
+            }
+            appendAiMessage(`*Đã kích hoạt chế độ **${personasConfig[pKey].name}**. Bạn cần hỗ trợ gì ngay lúc này?*`);
+        }
+
+        function saveApiKey(key) {
+            localStorage.setItem('bedtime_procrastination_gemini_key', key.trim());
+        }
+
+        function quickPrompt(text) {
+            document.getElementById('ai-user-input').value = text;
+            sendAiMessage();
+        }
+
+        function formatMarkdown(text) {
+            return text
+                .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+                .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+                .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+                .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/gim, '<em>$1</em>')
+                .replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>')
+                .replace(/^\- (.*$)/gim, '<li>$1</li>');
+        }
+
+        function appendUserMessage(text) {
+            const chatBox = document.getElementById('ai-chat-box');
+            chatBox.innerHTML += `
+                <div class="flex gap-3 justify-end">
+                    <div class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-3.5 rounded-2xl rounded-tr-none text-xs max-w-[85%] leading-relaxed shadow-md">
+                        ${text}
+                    </div>
+                </div>
+            `;
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function appendAiMessage(text) {
+            const chatBox = document.getElementById('ai-chat-box');
+            chatBox.innerHTML += `
+                <div class="flex gap-3">
+                    <div class="w-8 h-8 rounded-full bg-purple-600/30 text-purple-300 flex items-center justify-center text-xs flex-shrink-0">
+                        <i class="fa-solid fa-robot"></i>
+                    </div>
+                    <div class="bg-night-900 border border-slate-800 p-3.5 rounded-2xl rounded-tl-none text-xs text-slate-200 max-w-[88%] leading-relaxed ai-content">
+                        ${formatMarkdown(text)}
+                    </div>
+                </div>
+            `;
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        async function sendAiMessage() {
+            const input = document.getElementById('ai-user-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            appendUserMessage(text);
+            input.value = '';
+
+            const apiKey = document.getElementById('gemini-api-key').value.trim() || localStorage.getItem('bedtime_procrastination_gemini_key') || "";
+            conversationHistory.push({ role: "user", parts: [{ text: text }] });
+
+            const chatBox = document.getElementById('ai-chat-box');
+            const loadId = 'loading-' + Date.now();
+            chatBox.innerHTML += `
+                <div id="${loadId}" class="flex gap-3">
+                    <div class="w-8 h-8 rounded-full bg-purple-600/30 text-purple-300 flex items-center justify-center text-xs flex-shrink-0 animate-spin">
+                        <i class="fa-solid fa-circle-notch"></i>
+                    </div>
+                    <div class="bg-night-900 border border-slate-800 p-3 rounded-2xl rounded-tl-none text-xs text-slate-400">
+                        Bedtime Procrastination AI đang phản hồi...
+                    </div>
+                </div>
+            `;
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            if (!apiKey) {
+                setTimeout(() => {
+                    document.getElementById(loadId)?.remove();
+                    let fallbackResponse = "";
+                    if (currentPersona === 'doctor') {
+                        fallbackResponse = `**Lời khuyên từ Bác Sĩ Nhịp Ngủ:**\n\n- Khi thức quá giờ giới nghiêm, nồng độ **Cortisol** sẽ bị kích hoạt ngược làm tỉnh táo giả tạo.\n- **Hành động ngay:** Hãy đặt mốc giới nghiêm ở bảng Hẹn Giờ để hệ thống nhắc bạn gập máy đúng giờ.`;
+                    } else {
+                        fallbackResponse = `**Chia sẻ cùng bạn:**\n\n- Cảm giác tiếc nuối khi ngày trôi qua quá nhanh là nguyên nhân cốt lõi của Bedtime Procrastination.\n- Hãy ghi chú các việc còn dang dở ra sổ và để chuông báo giới nghiêm giúp bạn hạ cánh an toàn tối nay!`;
+                    }
+                    appendAiMessage(fallbackResponse);
+                }, 800);
+                return;
+            }
+
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: conversationHistory,
+                        systemInstruction: {
+                            parts: [{ text: personasConfig[currentPersona].system }]
+                        }
+                    })
+                });
+
+                document.getElementById(loadId)?.remove();
+
+                if (!response.ok) throw new Error(`Mã lỗi HTTP: ${response.status}`);
+
+                const data = await response.json();
+                const aiReply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Không nhận được phản hồi từ AI. Hãy thử lại!";
+                conversationHistory.push({ role: "model", parts: [{ text: aiReply }] });
+                appendAiMessage(aiReply);
+            } catch (err) {
+                document.getElementById(loadId)?.remove();
+                appendAiMessage(`⚠️ **Lỗi kết nối:** ${err.message}.`);
+            }
+        }
+
+        window.onload = function() {
+            initQuiz();
+            const savedKey = localStorage.getItem('bedtime_procrastination_gemini_key');
+            if (savedKey) {
+                document.getElementById('gemini-api-key').value = savedKey;
+            }
+
+            // Phục hồi chuỗi kỷ luật
+            const streak = localStorage.getItem('bedtime_streak_days') || '0';
+            document.getElementById('streak-counter').innerText = `${streak} Ngày`;
+        };
+    </script>
+</body>
+</html>
