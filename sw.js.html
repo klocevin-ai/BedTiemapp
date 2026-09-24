@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cẩm Nang Cài Đặt Thông Báo Ngoài Màn Hình - Bedtime THPT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        night: { 950: '#060913', 900: '#0B0F1E', 850: '#11172A', 800: '#172038' }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-night-950 text-slate-100 min-h-screen py-10 px-4 sm:px-6 lg:px-8 font-sans">
+
+    <div class="max-w-4xl mx-auto space-y-10">
+
+        <!-- HEADER -->
+        <header class="text-center space-y-3">
+            <span class="px-3.5 py-1 rounded-full text-xs font-semibold bg-purple-500/20 text-purple-300 border border-purple-500/30 uppercase tracking-widest">
+                Tài Liệu Hướng Dẫn Kỹ Thuật
+            </span>
+            <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400">
+                Bật Thông Báo Ra Màn Hình Khóa Điện Thoại
+            </h1>
+            <p class="text-slate-400 text-sm max-w-2xl mx-auto">
+                Cơ chế kích hoạt chuông và biểu ngữ thông báo hiển thị đè lên màn hình khóa thiết bị di động (Android & iOS) bằng Service Worker và Progressive Web App (PWA).
+            </p>
+        </header>
+
+        <!-- KHU VỰC THỬ NGHIỆM TRỰC TIẾP TRÊN TRÌNH DUYỆT -->
+        <div class="bg-night-900 border border-cyan-500/40 p-6 rounded-3xl shadow-xl space-y-4">
+            <div class="flex items-center gap-3">
+                <span class="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-flask-vial"></i>
+                </span>
+                <div>
+                    <h2 class="text-base font-bold text-white">Kiểm Tra Trực Tiếp Trên Thiết Bị Này</h2>
+                    <p class="text-xs text-slate-400">Bấm các nút dưới đây để kiểm tra khả năng rung và phát thông báo của máy bạn</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                <button onclick="testPermission()" class="p-3 bg-night-850 hover:bg-slate-800 border border-slate-700 rounded-xl text-xs font-semibold text-slate-200 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-key text-amber-400"></i> 1. Cấp Quyền Thông Báo
+                </button>
+                <button onclick="testVibrate()" class="p-3 bg-night-850 hover:bg-slate-800 border border-slate-700 rounded-xl text-xs font-semibold text-slate-200 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-mobile-screen-button text-purple-400"></i> 2. Thử Rung Máy
+                </button>
+                <button onclick="testNotification()" class="p-3 bg-gradient-to-r from-cyan-600 to-purple-600 hover:opacity-90 rounded-xl text-xs font-bold text-white flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-bell"></i> 3. Bắn Thông Báo Test
+                </button>
+            </div>
+            <div id="test-status" class="text-xs font-mono text-cyan-300 p-2.5 bg-night-950 rounded-xl border border-slate-800 text-center">
+                Trạng thái quyền: Chờ kiểm tra...
+            </div>
+        </div>
+
+        <!-- CẤU TRÚC 3 BƯỚC FILE KỸ THUẬT -->
+        <div class="space-y-6">
+            <h2 class="text-xl font-bold text-white flex items-center gap-2 border-b border-slate-800 pb-3">
+                <i class="fa-solid fa-code text-purple-400"></i> 1. Cấu Trúc 3 File Cần Đặt Cùng Thư Mục
+            </h2>
+
+            <!-- Bước 1: File sw.js -->
+            <div class="bg-night-900 border border-slate-800 p-5 rounded-2xl space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm font-bold text-cyan-300">File 1: <code>sw.js</code> (Service Worker chạy ngầm)</span>
+                    <span class="text-[10px] px-2 py-0.5 rounded bg-cyan-900/40 text-cyan-300 border border-cyan-500/30 uppercase font-mono">Bắt buộc</span>
+                </div>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    Đây là tiến trình nền độc lập với tab duyệt web. Khi điện thoại tắt màn hình, Service Worker giữ quyền đánh thức thiết bị và phát thông báo.
+                </p>
+                <pre class="bg-night-950 p-4 rounded-xl text-xs font-mono text-purple-300 overflow-x-auto border border-slate-800">
+self.addEventListener('install', (e) => self.skipWaiting());
+self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
+
+// Khi bấm vào thông báo trên màn hình khóa -> Tự động bật mở trang web
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+            for (const client of clientList) {
+                if (client.url && 'focus' in client) return client.focus();
+            }
+            if (clients.openWindow) return clients.openWindow('./');
+        })
+    );
+});</pre>
+            </div>
+
+            <!-- Bước 2: File manifest.json -->
+            <div class="bg-night-900 border border-slate-800 p-5 rounded-2xl space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm font-bold text-pink-300">File 2: <code>manifest.json</code> (Khai báo ứng dụng di động PWA)</span>
+                    <span class="text-[10px] px-2 py-0.5 rounded bg-pink-900/40 text-pink-300 border border-pink-500/30 uppercase font-mono">Bắt buộc</span>
+                </div>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    Khai báo với hệ điều hành điện thoại rằng đây là một ứng dụng di động, cho phép cài đặt ra màn hình chính dạng App không viền.
+                </p>
+                <pre class="bg-night-950 p-4 rounded-xl text-xs font-mono text-pink-300 overflow-x-auto border border-slate-800">
+{
+  "name": "Bedtime Procrastination THPT",
+  "short_name": "BedtimeTHPT",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#060913",
+  "theme_color": "#060913",
+  "icons": [
+    {
+      "src": "https://placehold.co/192x192/1e1b4b/a855f7?text=Zzz",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}</pre>
+            </div>
+
+            <!-- Bước 3: Đăng ký trong index.html -->
+            <div class="bg-night-900 border border-slate-800 p-5 rounded-2xl space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm font-bold text-amber-300">File 3: Cập nhật trong <code>index.html</code></span>
+                    <span class="text-[10px] px-2 py-0.5 rounded bg-amber-900/40 text-amber-300 border border-amber-500/30 uppercase font-mono">Liên kết</span>
+                </div>
+                <p class="text-xs text-slate-400">
+                    Khai báo thẻ liên kết `manifest` trong thẻ `<head>` và kích hoạt Service Worker trong `<script>`:
+                </p>
+                <pre class="bg-night-950 p-4 rounded-xl text-xs font-mono text-amber-200 overflow-x-auto border border-slate-800">
+&lt;!-- 1. Đặt trong cặp thẻ &lt;head&gt;...&lt;/head&gt; --&gt;
+&lt;link rel="manifest" href="manifest.json"&gt;
+
+&lt;!-- 2. Đặt trong cặp thẻ &lt;script&gt;...&lt;/script&gt; --&gt;
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js');
+}</pre>
+            </div>
+        </div>
+
+        <!-- THAO TÁC CÀI ĐẶT TRÊN TỪNG HỆ ĐIỀU HÀNH -->
+        <div class="space-y-6">
+            <h2 class="text-xl font-bold text-white flex items-center gap-2 border-b border-slate-800 pb-3">
+                <i class="fa-solid fa-mobile-screen text-cyan-400"></i> 2. Hướng Dẫn Thao Tác Cài Đặt Trên Điện Thoại
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Android -->
+                <div class="bg-night-900 border border-slate-800 p-6 rounded-2xl space-y-4">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-brands fa-android text-emerald-400 text-2xl"></i>
+                        <h3 class="font-bold text-white text-base">Thiết Bị Android (Chrome / Edge)</h3>
+                    </div>
+                    <ol class="space-y-3 text-xs text-slate-300 leading-relaxed list-decimal list-inside">
+                        <li>Truy cập vào trang web qua giao thức <strong>https://</strong> (Netlify hoặc GitHub Pages).</li>
+                        <li>Nhấn vào biểu tượng <strong>3 chấm</strong> ở góc trên bên phải trình duyệt.</li>
+                        <li>Chọn <strong>"Cài đặt ứng dụng"</strong> hoặc <strong>"Thêm vào Màn hình chính"</strong>.</li>
+                        <li>Mở icon ứng dụng vừa tạo ngoài màn hình $\rightarrow$ Chọn <strong>"Cho phép" (Allow)</strong> khi được hỏi quyền gửi thông báo.</li>
+                        <li><strong>Mẹo pin:</strong> Vào Cài đặt máy $\rightarrow$ Ứng dụng $\rightarrow$ Chọn App $\rightarrow$ Tắt chế độ "Tối ưu hóa pin" để thông báo không bị trễ khi máy ngủ sâu.</li>
+                    </ol>
+                </div>
+
+                <!-- iOS -->
+                <div class="bg-night-900 border border-slate-800 p-6 rounded-2xl space-y-4">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-brands fa-apple text-slate-200 text-2xl"></i>
+                        <h3 class="font-bold text-white text-base">Thiết Bị iPhone / iPad (iOS 16.4+)</h3>
+                    </div>
+                    <ol class="space-y-3 text-xs text-slate-300 leading-relaxed list-decimal list-inside">
+                        <li>Mở đường link bằng trình duyệt <strong>Safari</strong> (bắt buộc phải là Safari trên iOS).</li>
+                        <li>Nhấn vào nút <strong>Chia sẻ (Share)</strong> có biểu tượng hình vuông kèm mũi tên hướng lên.</li>
+                        <li>Cuộn xuống danh sách và chọn <strong>"Thêm vào MH chính" (Add to Home Screen)</strong>.</li>
+                        <li>Thoát ra màn hình chính iPhone và chạm vào icon ứng dụng để mở.</li>
+                        <li>Bấm nút kích hoạt chuông trên web và nhấn <strong>"Cho phép"</strong> khi hộp thoại cấp quyền xuất hiện.</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <!-- BẢNG CHUẨN ĐOÁN LỖI -->
+        <div class="space-y-4">
+            <h2 class="text-xl font-bold text-white flex items-center gap-2 border-b border-slate-800 pb-3">
+                <i class="fa-solid fa-triangle-exclamation text-rose-400"></i> 3. Các Lỗi Phổ Biến Khiến Thông Báo Không Nhảy
+            </h2>
+
+            <div class="bg-night-900 border border-slate-800 rounded-2xl overflow-hidden">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-night-850 text-slate-300 font-bold border-b border-slate-800">
+                        <tr>
+                            <th class="p-3.5">Hiện tượng</th>
+                            <th class="p-3.5">Nguyên nhân</th>
+                            <th class="p-3.5">Cách xử lý</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800 text-slate-400">
+                        <tr>
+                            <td class="p-3.5 font-medium text-slate-200">Không hiện thông báo</td>
+                            <td class="p-3.5">Chạy qua đường dẫn `file:///` nội bộ</td>
+                            <td class="p-3.5 text-cyan-300">Bắt buộc phải tải lên Netlify hoặc GitHub Pages có `https://`.</td>
+                        </tr>
+                        <tr>
+                            <td class="p-3.5 font-medium text-slate-200">Bấm không thấy hỏi quyền</td>
+                            <td class="p-3.5">Trước đó đã bấm "Chặn" (Block)</td>
+                            <td class="p-3.5">Vào Cài đặt trang web trên trình duyệt $\rightarrow$ Chuyển quyền Thông báo sang "Cho phép".</td>
+                        </tr>
+                        <tr>
+                            <td class="p-3.5 font-medium text-slate-200">Khóa màn hình lâu thì bị trễ</td>
+                            <td class="p-3.5">Chế độ tiết kiệm pin tự tắt mạng ngầm</td>
+                            <td class="p-3.5">Cho phép ứng dụng trình duyệt chạy nền trong Cài đặt pin của điện thoại.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <footer class="text-center text-xs text-slate-500 pt-6 border-t border-slate-800">
+            Dự án Nghiên cứu & Quản lý giấc ngủ THPT • Bedtime Procrastination Hub
+        </footer>
+
+    </div>
+
+    <!-- SCRIPT TƯƠNG TÁC THỬ NGHIỆM -->
+    <script>
+        function updateStatus(msg) {
+            document.getElementById('test-status').innerText = msg;
+        }
+
+        async function testPermission() {
+            if (!("Notification" in window)) {
+                updateStatus("Trình duyệt này không hỗ trợ Notification API.");
+                return;
+            }
+            const perm = await Notification.requestPermission();
+            updateStatus("Trạng thái quyền hiện tại: " + perm.toUpperCase());
+        }
+
+        function testVibrate() {
+            if ("vibrate" in navigator) {
+                navigator.vibrate([300, 150, 300, 150, 500]);
+                updateStatus("Đã gửi tín hiệu rung 3 nhịp tới điện thoại!");
+            } else {
+                updateStatus("Thiết bị hoặc trình duyệt này không hỗ trợ rung.");
+            }
+        }
+
+        async function testNotification() {
+            if (!("Notification" in window)) {
+                updateStatus("Trình duyệt không hỗ trợ thông báo.");
+                return;
+            }
+
+            if (Notification.permission !== "granted") {
+                const perm = await Notification.requestPermission();
+                if (perm !== "granted") {
+                    updateStatus("Bạn chưa cấp quyền thông báo. Hãy bấm Nút 1 để cấp quyền.");
+                    return;
+                }
+            }
+
+            // Bắn thông báo
+            const options = {
+                body: "Đây là thông báo mẫu nhảy ra ngoài màn hình khóa!",
+                icon: "https://placehold.co/192x192/1e1b4b/a855f7?text=Zzz",
+                vibrate: [400, 200, 400]
+            };
+
+            new Notification("⏰ THỬ NGHIỆM THÔNG BÁO BEDTIME THPT", options);
+            testVibrate();
+            updateStatus("Đã phát thông báo! Hãy thử khóa màn hình để kiểm tra.");
+        }
+
+        // Tự động kiểm tra trạng thái ban đầu
+        window.onload = function() {
+            if ("Notification" in window) {
+                updateStatus("Trạng thái quyền thông báo: " + Notification.permission.toUpperCase());
+            } else {
+                updateStatus("Trình duyệt này không hỗ trợ Web Notification.");
+            }
+        };
+    </script>
+</body>
+</html>
