@@ -59,7 +59,6 @@
             background-color: #060914;
         }
 
-        /* Chống tự động zoom khó chịu khi nhập liệu trên iOS */
         input, select, textarea {
             font-size: 16px !important;
         }
@@ -140,7 +139,7 @@
 </head>
 <body class="bg-night-950 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-pink-500 selection:text-white relative stars-bg">
 
-    <!-- LỚP PHỦ ÁNH SÁNG & BÁO ĐỘNG (ĐẢM BẢO KHÔNG CHẶN CHẠM CẢM ỨNG) -->
+    <!-- LỚP PHỦ ÁNH SÁNG & BÁO ĐỘNG -->
     <div id="night-shift-overlay" class="fixed inset-0 z-40 bg-transparent pointer-events-none"></div>
     <div id="screen-strobe-overlay" class="fixed inset-0 z-40 emergency-strobe pointer-events-none hidden"></div>
 
@@ -173,25 +172,38 @@
                 <span class="text-rose-400 font-bold">-5 Điểm</span>
             </div>
         </div>
-        <button onclick="emergencyUnlockPrompt()" class="text-xs text-slate-500 hover:text-slate-300 underline transition py-2">
-            Mở khóa ngoại lệ (Yêu cầu nhập lý do thực sự khẩn cấp)
-        </button>
+        <div class="flex flex-col gap-2 w-full max-w-xs">
+            <button onclick="triggerMissionAlarm()" class="w-full py-3 bg-gradient-to-r from-pink-500 to-rose-600 text-white font-bold text-xs rounded-2xl shadow-lg btn-bouncy">
+                🧩 Giải Câu Đố Để Tắt Còi & Mở Khóa
+            </button>
+            <button onclick="emergencyUnlockPrompt()" class="text-xs text-slate-500 hover:text-slate-300 underline transition py-2">
+                Mở khóa ngoại lệ (Yêu cầu nhập lý do thực sự khẩn cấp)
+            </button>
+        </div>
     </div>
 
-    <!-- MODAL NHIỆM VỤ DẬP CÒI BÁO ĐỘNG (MATH CHALLENGE) -->
-    <div id="mission-alarm-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 hidden">
+    <!-- MODAL NHIỆM VỤ GIẢI CÂU ĐỐ DẬP CÒI & DỪNG THÔNG BÁO (NÂNG CẤP ĐA CHẾ ĐỘ) -->
+    <div id="mission-alarm-modal" class="fixed inset-0 z-[80] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 hidden">
         <div class="glass-panel border-2 border-rose-500 rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center space-y-4 shadow-neon-pink">
             <div class="text-5xl animate-bounce">⏰😾</div>
             <div class="space-y-1">
-                <h3 class="text-xl font-black text-white">Báo Động Cú Đêm!</h3>
-                <p class="text-xs text-slate-400">Giải nhanh phép tính để ngắt còi hú và tắt máy đi ngủ:</p>
+                <span id="challenge-mode-badge" class="px-2.5 py-0.5 bg-rose-500/20 text-rose-300 text-[10px] rounded-full font-mono font-bold uppercase">
+                    CHẾ ĐỘ THỬ THÁCH
+                </span>
+                <h3 class="text-xl font-black text-white">Thử Thách Dừng Báo Động!</h3>
+                <p id="challenge-instruction-text" class="text-xs text-slate-400">
+                    Giải đúng câu đố dưới đây để ngắt còi hú và dừng chuỗi thông báo bám đuổi:
+                </p>
             </div>
             <div class="p-4 bg-night-950 rounded-2xl border border-slate-800 space-y-3">
-                <div id="math-problem-text" class="text-3xl font-mono font-black text-pink-400">-- + -- = ?</div>
-                <div class="flex gap-2">
-                    <input type="number" id="math-answer-input" placeholder="Đáp số..." class="w-full bg-night-900 border border-slate-700 rounded-xl px-4 py-2.5 text-center font-mono text-white text-base focus:border-pink-500 outline-none">
-                    <button onclick="verifyMathAnswer()" class="px-5 py-2.5 bg-gradient-to-r from-pink-500 to-rose-600 text-white font-bold text-xs rounded-xl btn-bouncy">
-                        Nộp
+                <div id="challenge-question-display" class="text-lg sm:text-xl font-mono font-black text-pink-400 break-words leading-snug">
+                    -- + -- = ?
+                </div>
+                <div id="challenge-hint-display" class="text-[11px] text-amber-300/90 italic hidden"></div>
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <input type="text" id="challenge-answer-input" placeholder="Nhập đáp án tại đây..." autocomplete="off" class="w-full bg-night-900 border border-slate-700 rounded-xl px-4 py-2.5 text-center font-mono text-white text-base focus:border-pink-500 outline-none">
+                    <button onclick="verifyChallengeAnswer()" class="px-5 py-2.5 bg-gradient-to-r from-pink-500 to-rose-600 text-white font-bold text-xs rounded-xl btn-bouncy shrink-0">
+                        Xác Nhận
                     </button>
                 </div>
             </div>
@@ -232,13 +244,18 @@
                         <span class="font-extrabold text-sm tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-pink-400 via-purple-300 to-cyan-300">
                             SLEEPMATE Pro
                         </span>
-                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-bold font-mono">ULTRA</span>
+                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-bold font-mono">ULTRA v2</span>
                     </div>
                     <span class="text-[10px] text-slate-400 hidden sm:inline">Suite Kỷ Luật & Khoa Học Giấc Ngủ</span>
                 </div>
             </div>
 
             <div class="flex items-center gap-2 sm:gap-4 text-slate-400">
+                <div class="flex items-center gap-1.5 text-xs bg-night-900/90 px-3 py-1.5 rounded-full border border-slate-800">
+                    <i class="fa-solid fa-shield-cat text-emerald-400"></i>
+                    <span class="hidden md:inline">Bám Đuổi Nền:</span>
+                    <span id="hud-bg-guard-status" class="font-mono font-bold text-emerald-400">ON</span>
+                </div>
                 <div class="flex items-center gap-1.5 text-xs bg-night-900/90 px-3 py-1.5 rounded-full border border-slate-800">
                     <i class="fa-solid fa-heart text-pink-400 animate-pulse"></i>
                     <span class="hidden sm:inline">Kỷ Luật:</span>
@@ -259,7 +276,7 @@
                 <i class="fa-solid fa-mobile-screen"></i> <span>Quản Lý Máy & Khóa</span>
             </button>
             <button onclick="switchTab('mobile-notif')" id="tab-btn-mobile-notif" class="tab-btn shrink-0 px-4 py-2 rounded-2xl text-xs font-bold transition flex items-center gap-2 text-slate-400 hover:text-slate-200 hover:bg-night-850 btn-bouncy">
-                <i class="fa-solid fa-bell text-amber-400"></i> <span>Thông Báo & Cảm Biến</span>
+                <i class="fa-solid fa-bell text-amber-400"></i> <span>Câu Đố & Thông Báo Nền</span>
             </button>
             <button onclick="switchTab('sleep-calc')" id="tab-btn-sleep-calc" class="tab-btn shrink-0 px-4 py-2 rounded-2xl text-xs font-bold transition flex items-center gap-2 text-slate-400 hover:text-slate-200 hover:bg-night-850 btn-bouncy">
                 <i class="fa-solid fa-user-clock text-cyan-400"></i> <span>Lịch 4 Đối Tượng</span>
@@ -289,13 +306,13 @@
             <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-950/80 via-purple-950/60 to-pink-950/80 border border-pink-500/30 p-6 sm:p-8 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-6">
                 <div class="space-y-2 text-center sm:text-left z-10">
                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-pink-500/20 text-pink-300 border border-pink-500/30">
-                        🐾 Auto Sentinel Active
+                        🐾 Auto Sentinel & Background Guard
                     </span>
                     <h1 class="text-2xl sm:text-3xl font-black text-white">
                         Quản Lý Thiết Bị & Khóa Giới Nghiêm
                     </h1>
                     <p class="text-xs sm:text-sm text-slate-300 max-w-md leading-relaxed">
-                        Tự động theo dõi thời gian nhìn màn hình ban đêm, phát hiện nằm lướt máy và kích hoạt <strong class="text-pink-300">Khóa Cưỡng Chế</strong> khi chạm giờ giới nghiêm.
+                        Tự động theo dõi thời gian nhìn màn hình, <strong class="text-cyan-300">bắn thông báo liên tục ngay cả khi thoát ra màn hình chính</strong> và yêu cầu giải đố mới được tắt báo động.
                     </p>
                 </div>
 
@@ -329,10 +346,10 @@
                             <h3 class="text-base font-bold text-white flex items-center gap-2">
                                 <i class="fa-solid fa-stopwatch text-amber-400"></i> Giám Sát Cầm Máy Ban Đêm
                             </h3>
-                            <p class="text-xs text-slate-400 mt-0.5">Tự động tạm dừng tính giờ nếu không thao tác trong 2 phút</p>
+                            <p class="text-xs text-slate-400 mt-0.5">Vẫn tiếp tục đếm ngầm bằng Web Worker ngay cả khi bạn thu nhỏ trình duyệt</p>
                         </div>
                         <span id="active-state-tag" class="px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5">
-                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Đang Nhìn Màn Hình
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Đang Mở App
                         </span>
                     </div>
 
@@ -371,18 +388,23 @@
                         </div>
                     </div>
 
-                    <button onclick="endScreenSessionManually()" class="w-full py-3.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:opacity-95 text-white font-bold text-xs rounded-2xl shadow-lg transition btn-bouncy flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-power-off"></i> Tôi Hoàn Thành & Tắt Máy Ngay (+2 Điểm Kỷ Luật)
-                    </button>
+                    <div class="flex flex-col sm:flex-row gap-2.5">
+                        <button onclick="endScreenSessionManually()" class="flex-1 py-3.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:opacity-95 text-white font-bold text-xs rounded-2xl shadow-lg transition btn-bouncy flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-power-off"></i> Hoàn Thành & Tắt Máy Ngay (+2 Điểm)
+                        </button>
+                        <button onclick="switchTab('mobile-notif')" class="px-4 py-3.5 bg-night-900 hover:bg-night-800 border border-pink-500/40 text-pink-300 font-bold text-xs rounded-2xl transition btn-bouncy flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-puzzle-piece"></i> Cài Đặt Câu Đố Dừng Còi
+                        </button>
+                    </div>
                 </div>
 
                 <div class="glass-panel p-6 rounded-3xl space-y-6 flex flex-col justify-between">
                     <div class="space-y-4">
                         <div class="border-b border-slate-800 pb-3">
                             <h4 class="text-xs font-bold text-rose-400 uppercase tracking-wider flex items-center gap-2">
-                                <i class="fa-solid fa-lock text-rose-500"></i> Cấu Hình Auto Khóa Màn Hình
+                                <i class="fa-solid fa-lock text-rose-500"></i> Cấu Hình Auto Khóa & Bám Đuổi
                             </h4>
-                            <p class="text-[11px] text-slate-400 mt-0.5">Tự động phủ màn chắn khi vi phạm thời gian</p>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Tự động phủ màn chắn & bắn thông báo khi thoát app</p>
                         </div>
 
                         <div class="p-3 bg-night-950 rounded-2xl border border-slate-800 flex items-center justify-between">
@@ -391,6 +413,14 @@
                                 <span class="text-[10px] text-slate-400">Tự khóa sau 15/30/45/60 phút</span>
                             </div>
                             <input type="checkbox" id="auto-lock-on-limit" checked class="w-5 h-5 accent-rose-500 cursor-pointer">
+                        </div>
+
+                        <div class="p-3 bg-night-950 rounded-2xl border border-emerald-500/30 flex items-center justify-between">
+                            <div>
+                                <span class="text-xs font-bold text-emerald-300 block">Báo động khi thoát màn hình:</span>
+                                <span class="text-[10px] text-slate-400">Thoát ra lướt app khác vẫn gửi Push</span>
+                            </div>
+                            <input type="checkbox" id="bg-persistent-notif-toggle" checked onchange="toggleBgGuard(this.checked)" class="w-5 h-5 accent-emerald-500 cursor-pointer">
                         </div>
 
                         <div class="p-3 bg-night-950 rounded-2xl border border-slate-800 space-y-2">
@@ -418,7 +448,7 @@
 
                     <div class="space-y-2">
                         <button onclick="triggerHardcoreLockout('Kích hoạt khóa thử nghiệm')" class="w-full py-2.5 bg-rose-600/90 hover:bg-rose-600 text-white text-xs font-bold rounded-xl transition shadow-lg btn-bouncy flex items-center justify-center gap-1.5">
-                            <i class="fa-solid fa-lock"></i> Thử Nghiệm Khóa Ngay
+                            <i class="fa-solid fa-lock"></i> Thử Nghiệm Khóa & Giải Đố Ngay
                         </button>
                     </div>
                 </div>
@@ -426,44 +456,151 @@
         </section>
 
         <!-- ======================================================== -->
-        <!-- MỤC 2: CẢM BIẾN & THỐNG KÊ THÔNG BÁO MOBILE (ĐÃ SỬA LỖI DOM) -->
+        <!-- MỤC 2: CÂU ĐỐ DỪNG THÔNG BÁO & BÁM ĐUỔI NỀN (NÂNG CẤP MỚI) -->
         <!-- ======================================================== -->
         <section id="section-mobile-notif" class="tab-content hidden space-y-6">
             <div class="glass-panel p-6 sm:p-8 rounded-3xl space-y-6">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
                     <div>
                         <span class="px-3 py-1 bg-amber-500/20 text-amber-300 text-[11px] rounded-full font-bold uppercase tracking-wider font-mono">
-                            Mobile Telemetry & Push Engine
+                            Persistent Push & Custom Riddle Guard
                         </span>
                         <h2 class="text-xl sm:text-2xl font-black text-white mt-1 flex items-center gap-2">
-                            <span>🔔</span> Trung Tâm Thông Báo & Cảm Biến Di Động
+                            <span>🧩</span> Tự Đặt Câu Đố & Thông Báo Khi Thoát Màn Hình
                         </h2>
-                        <p class="text-xs text-slate-400">Gửi thông báo đẩy ra màn hình khoá, theo dõi góc nghiêng và số lần lướt máy.</p>
+                        <p class="text-xs text-slate-400">Thiết lập câu đố cá nhân để tắt còi báo động và giữ thông báo nhắc nhở liên tục kể cả khi thoát app.</p>
                     </div>
 
-                    <div class="flex gap-2">
+                    <div class="flex flex-wrap gap-2">
                         <button onclick="requestNotificationAccess()" id="btn-request-notif" class="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-rose-600 text-white font-bold text-xs rounded-2xl shadow-lg btn-bouncy flex items-center gap-1.5">
                             <i class="fa-solid fa-bell"></i> <span id="notif-btn-label">Bật Thông Báo Mobile</span>
                         </button>
-                        <button onclick="testLateNightNotification()" class="px-3.5 py-2.5 bg-night-950 border border-slate-700 text-cyan-300 font-bold text-xs rounded-2xl btn-bouncy" title="Test thông báo ngay">
-                            <i class="fa-solid fa-paper-plane"></i> Thử Ngay
+                        <button onclick="testBackgroundNotificationNow()" class="px-3.5 py-2.5 bg-night-950 border border-cyan-500/40 text-cyan-300 font-bold text-xs rounded-2xl btn-bouncy" title="Thử thông báo ngay">
+                            <i class="fa-solid fa-paper-plane"></i> Test Bắn Thông Báo
                         </button>
                     </div>
                 </div>
 
-                <!-- CÁC THẺ CẢM BIẾN DOM THỜI GIAN THỰC (BỔ SUNG ĐẦY ĐỦ ID TRÁNH LỖI NULL) -->
+                <!-- KHỐI 1: TỰ ĐẶT CÂU ĐỐ ĐỂ DỪNG THÔNG BÁO / TẮT CÒI -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="p-5 bg-night-950 rounded-3xl border border-pink-500/30 space-y-4">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                            <div>
+                                <h3 class="text-sm font-extrabold text-pink-300 flex items-center gap-2">
+                                    <i class="fa-solid fa-brain"></i> 1. Thiết Lập Câu Đố Dừng Báo Động
+                                </h3>
+                                <p class="text-[11px] text-slate-400">Muốn tắt còi hú hoặc dừng chuỗi thông báo bám đuổi, bạn bắt buộc phải vượt qua thử thách này.</p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-300 block">Chọn chế độ thử thách khi báo động kêu:</label>
+                            <div class="grid grid-cols-3 gap-2">
+                                <button onclick="setChallengeMode('custom')" id="mode-btn-custom" class="p-2.5 rounded-xl border-2 border-pink-500 bg-pink-950/30 text-pink-300 text-xs font-bold transition btn-bouncy">
+                                    ✍️ Câu Đố Tự Đặt
+                                </button>
+                                <button onclick="setChallengeMode('math')" id="mode-btn-math" class="p-2.5 rounded-xl border border-slate-800 bg-night-900 text-slate-300 text-xs font-bold transition btn-bouncy">
+                                    🔢 Toán Ngẫu Nhiên
+                                </button>
+                                <button onclick="setChallengeMode('pledge')" id="mode-btn-pledge" class="p-2.5 rounded-xl border border-slate-800 bg-night-900 text-slate-300 text-xs font-bold transition btn-bouncy">
+                                    📜 Gõ Cam Kết
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Form nhập câu đố tùy chỉnh -->
+                        <div id="custom-riddle-form" class="space-y-3 pt-1">
+                            <div>
+                                <label class="text-[11px] font-bold text-slate-300 block mb-1">Câu hỏi / Câu đố của bạn:</label>
+                                <input type="text" id="custom-riddle-question" placeholder="VD: Mục tiêu điểm tổng kết học kỳ này là bao nhiêu?" class="w-full bg-night-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:border-pink-500 outline-none">
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="text-[11px] font-bold text-slate-300 block mb-1">Đáp án chính xác để mở khóa:</label>
+                                    <input type="text" id="custom-riddle-answer" placeholder="VD: 9.0" class="w-full bg-night-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-emerald-300 font-mono font-bold focus:border-emerald-500 outline-none">
+                                </div>
+                                <div>
+                                    <label class="text-[11px] font-bold text-slate-300 block mb-1">Gợi ý nhỏ (Tùy chọn):</label>
+                                    <input type="text" id="custom-riddle-hint" placeholder="VD: Con số đã hứa với bản thân" class="w-full bg-night-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-300 focus:border-amber-500 outline-none">
+                                </div>
+                            </div>
+                            <div class="flex gap-2 pt-1">
+                                <button onclick="saveCustomRiddleConfig()" class="flex-1 py-2.5 bg-gradient-to-r from-pink-500 to-indigo-600 text-white font-bold text-xs rounded-xl shadow-md btn-bouncy">
+                                    <i class="fa-solid fa-floppy-disk mr-1"></i> Lưu Câu Đố Của Tôi
+                                </button>
+                                <button onclick="triggerMissionAlarm()" class="px-4 py-2.5 bg-night-900 border border-slate-700 text-amber-300 font-bold text-xs rounded-xl btn-bouncy">
+                                    Thử Giải Đố
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KHỐI 2: CẤU HÌNH THÔNG BÁO BÁM ĐUỔI KHI THOÁT RA MÀN HÌNH -->
+                    <div class="p-5 bg-night-950 rounded-3xl border border-cyan-500/30 space-y-4 flex flex-col justify-between">
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                                <div>
+                                    <h3 class="text-sm font-extrabold text-cyan-300 flex items-center gap-2">
+                                        <i class="fa-solid fa-satellite-dish"></i> 2. Thông Báo Bám Đuổi Khi Thoát Màn Hình
+                                    </h3>
+                                    <p class="text-[11px] text-slate-400">Giữ bộ đếm chạy ngầm và tự động đẩy thông báo nếu bạn thoát ra lướt Facebook, TikTok, Free Fire...</p>
+                                </div>
+                                <span id="bg-worker-badge" class="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                                    Worker Active
+                                </span>
+                            </div>
+
+                            <div class="space-y-3 text-xs">
+                                <div class="p-3 bg-night-900 rounded-2xl border border-slate-800 flex items-center justify-between">
+                                    <div>
+                                        <strong class="text-slate-200 block">Nhắc nhở ngay khi vừa thoát ra ngoài:</strong>
+                                        <span class="text-[11px] text-slate-400">Bắn thông báo lập tức sau 2 giây rời khỏi màn hình SLEEPMATE</span>
+                                    </div>
+                                    <input type="checkbox" id="notif-on-leave-toggle" checked class="w-5 h-5 accent-cyan-400 cursor-pointer">
+                                </div>
+
+                                <div class="p-3 bg-night-900 rounded-2xl border border-slate-800 flex items-center justify-between">
+                                    <div>
+                                        <strong class="text-slate-200 block">Tần suất lặp lại thông báo khi ở ngoài:</strong>
+                                        <span class="text-[11px] text-slate-400">Nhắc liên tục cho tới khi quay lại giải câu đố</span>
+                                    </div>
+                                    <select id="bg-repeat-interval-select" onchange="updateBgRepeatInterval(this.value)" class="bg-night-950 border border-slate-700 text-cyan-300 font-mono font-bold text-xs rounded-xl px-2.5 py-1.5 outline-none">
+                                        <option value="15">Mỗi 15 giây</option>
+                                        <option value="30" selected>Mỗi 30 giây</option>
+                                        <option value="60">Mỗi 60 giây</option>
+                                    </select>
+                                </div>
+
+                                <div class="p-3 bg-night-900 rounded-2xl border border-slate-800 flex items-center justify-between">
+                                    <div>
+                                        <strong class="text-slate-200 block">Số lần bạn đã thoát màn hình đêm nay:</strong>
+                                        <span class="text-[11px] text-slate-400">Tự động trừ 2 điểm kỷ luật mỗi lần thoát app</span>
+                                    </div>
+                                    <span id="leave-app-counter-badge" class="px-3 py-1 rounded-xl bg-rose-500/20 text-rose-300 font-mono font-bold">0 lần</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-3 bg-indigo-950/30 border border-indigo-500/30 rounded-2xl text-[11px] text-indigo-200 flex items-center justify-between gap-2">
+                            <span><i class="fa-solid fa-bolt text-amber-300 mr-1"></i> <strong>Mẹo chống ngủ đông trên ĐT:</strong> Bấm nút bên cạnh để kích hoạt luồng giữ thức ngầm (Keep-Alive).</span>
+                            <button onclick="enableAudioKeepAlive()" id="btn-keep-alive" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shrink-0 btn-bouncy">
+                                Bật Giữ Ngầm
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CÁC THẺ CẢM BIẾN DOM THỜI GIAN THỰC -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <!-- Sensor 1: Trạng thái thông báo Web Push -->
                     <div class="p-4 bg-night-950 rounded-2xl border border-slate-800 space-y-2">
                         <div class="flex items-center justify-between">
                             <span class="text-[10px] text-slate-400 uppercase font-bold">Trạng Thái Push</span>
                             <span id="notif-status-badge" class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">Chờ cấp quyền</span>
                         </div>
                         <div class="text-base font-bold font-mono text-white" id="notif-status-text">Chưa Kích Hoạt</div>
-                        <p class="text-[11px] text-slate-500">Nhắc nhở ngay cả khi bạn chuyển sang ứng dụng khác.</p>
+                        <p class="text-[11px] text-slate-500">Ghim thông báo trên màn hình khóa & thanh trạng thái.</p>
                     </div>
 
-                    <!-- Sensor 2: Con quay hồi chuyển / Góc máy -->
                     <div class="p-4 bg-night-950 rounded-2xl border border-slate-800 space-y-2">
                         <div class="flex items-center justify-between">
                             <span class="text-[10px] text-slate-400 uppercase font-bold">Góc Nghiêng Máy</span>
@@ -473,7 +610,6 @@
                         <p class="text-[11px] text-slate-500">Góc dưới ±25° vào ban đêm: cảnh báo nằm bấm rọi mắt.</p>
                     </div>
 
-                    <!-- Sensor 3: Lượt vuốt vô thức (Doomscroll) -->
                     <div class="p-4 bg-night-950 rounded-2xl border border-slate-800 space-y-2">
                         <div class="flex items-center justify-between">
                             <span class="text-[10px] text-slate-400 uppercase font-bold">Lướt Màn Hình</span>
@@ -483,14 +619,13 @@
                         <p class="text-[11px] text-slate-500">Đếm số lần lướt ngón tay liên tục trên màn hình.</p>
                     </div>
 
-                    <!-- Sensor 4: Cảm biến chuông sinh học Melatonin -->
                     <div class="p-4 bg-night-950 rounded-2xl border border-slate-800 space-y-2">
                         <div class="flex items-center justify-between">
-                            <span class="text-[10px] text-slate-400 uppercase font-bold">Âm Chuông & Rung</span>
-                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                            <span class="text-[10px] text-slate-400 uppercase font-bold">Câu Đố Đang Áp Dụng</span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-pink-400 animate-pulse"></span>
                         </div>
-                        <div class="text-base font-bold font-mono text-emerald-300">Haptic + Melatonin Chime</div>
-                        <p class="text-[11px] text-slate-500">Rung thiết bị và phát chuông sóng âm êm dịu nhắc ngủ.</p>
+                        <div class="text-sm font-bold font-mono text-pink-300 truncate" id="active-riddle-preview">Đang tải...</div>
+                        <p class="text-[11px] text-slate-500">Phải nhập đúng đáp án mới dừng được thông báo.</p>
                     </div>
                 </div>
 
@@ -506,12 +641,12 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-300">
                         <div class="p-3 bg-night-900 rounded-xl border border-slate-800 space-y-1">
-                            <strong class="text-white block">📱 Hướng dẫn nhận thông báo trên Android:</strong>
-                            <p class="text-slate-400">Bấm nút "Bật Thông Báo Mobile" và chọn "Cho phép" (Allow). Nếu không nhận được, hãy kiểm tra Cài đặt máy > Ứng dụng > Chrome > Thông báo > Bật công tắc.</p>
+                            <strong class="text-white block">📱 Cách hoạt động khi thoát ra màn hình chính:</strong>
+                            <p class="text-slate-400">Ngay khi bạn bấm nút Home hoặc chuyển sang ứng dụng khác, SLEEPMATE sẽ kích hoạt <strong>Web Worker ngầm</strong> và gửi thông báo đẩy kèm âm báo nhắc bạn quay lại giải câu đố để đi ngủ.</p>
                         </div>
                         <div class="p-3 bg-night-900 rounded-xl border border-slate-800 space-y-1">
-                            <strong class="text-white block">🍎 Hướng dẫn nhận thông báo trên iPhone (iOS):</strong>
-                            <p class="text-slate-400">Trên Safari, nhấn nút <strong>Chia sẻ</strong> (Share) > Chọn <strong>Thêm vào MH chính (Add to Home Screen)</strong>. Sau đó mở app từ icon ngoài màn hình chính để cấp quyền Push Notification.</p>
+                            <strong class="text-white block">🍎 Lưu ý trên iPhone (iOS) & Android:</strong>
+                            <p class="text-slate-400">Hãy bấm <strong>"Bật Thông Báo Mobile"</strong> và chọn Cho phép. Trên iOS, hãy chọn <strong>Thêm vào MH chính (Add to Home Screen)</strong> để thông báo đẩy hoạt động mạnh mẽ nhất.</p>
                         </div>
                     </div>
                 </div>
@@ -770,7 +905,7 @@
         SLEEPMATE Pro Ultra © 2026 - Tối Ưu Giấc Ngủ & Quản Lý Kỷ Luật Di Động Toàn Diện
     </footer>
 
-    <!-- JAVASCRIPT HỆ THỐNG ĐÃ SỬA LỖI TRIỆT ĐỂ -->
+    <!-- JAVASCRIPT HỆ THỐNG ĐÃ NÂNG CẤP CÂU ĐỐ TÙY CHỈNH & BÁM ĐUỔI NỀN -->
     <script>
         let disciplineScore = 100;
         let currentProfileKey = 'cap3';
@@ -939,11 +1074,87 @@
         }
 
         // ==========================================
-        // 3. SENTINEL & AUTO LOCKOUT (XỬ LÝ CẢM ỨNG AN TOÀN)
+        // 3. HỆ THỐNG CÂU ĐỐ TÙY CHỈNH (CUSTOM RIDDLE ENGINE)
+        // ==========================================
+        let challengeMode = 'custom'; // 'custom' | 'math' | 'pledge'
+        let currentExpectedAnswer = '';
+
+        function loadCustomRiddleConfig() {
+            const savedMode = localStorage.getItem('sm_challenge_mode') || 'custom';
+            const savedQ = localStorage.getItem('sm_riddle_q') || 'Mục tiêu thức dậy lúc mấy giờ sáng mai?';
+            const savedA = localStorage.getItem('sm_riddle_a') || '06:00';
+            const savedH = localStorage.getItem('sm_riddle_h') || 'Nhập đúng định dạng giờ (VD: 06:00)';
+
+            document.getElementById('custom-riddle-question').value = savedQ;
+            document.getElementById('custom-riddle-answer').value = savedA;
+            document.getElementById('custom-riddle-hint').value = savedH;
+
+            setChallengeMode(savedMode, false);
+        }
+
+        function setChallengeMode(mode, showToast = true) {
+            challengeMode = mode;
+            localStorage.setItem('sm_challenge_mode', mode);
+
+            ['custom', 'math', 'pledge'].forEach(m => {
+                const btn = document.getElementById(`mode-btn-${m}`);
+                if (btn) {
+                    btn.className = (m === mode)
+                        ? "p-2.5 rounded-xl border-2 border-pink-500 bg-pink-950/30 text-pink-300 text-xs font-bold transition btn-bouncy"
+                        : "p-2.5 rounded-xl border border-slate-800 bg-night-900 text-slate-300 text-xs font-bold transition btn-bouncy";
+                }
+            });
+
+            const formEl = document.getElementById('custom-riddle-form');
+            if (formEl) {
+                formEl.style.opacity = (mode === 'custom') ? '1' : '0.55';
+            }
+
+            updateActiveRiddlePreview();
+            if (showToast) {
+                const modeNames = { custom: 'Câu Đố Tự Đặt', math: 'Toán Ngẫu Nhiên', pledge: 'Gõ Cam Kết Kỷ Luật' };
+                alert(`✅ Đã chuyển chế độ thử thách dừng thông báo sang: ${modeNames[mode]}`);
+            }
+        }
+
+        function saveCustomRiddleConfig() {
+            const q = document.getElementById('custom-riddle-question').value.trim();
+            const a = document.getElementById('custom-riddle-answer').value.trim();
+            const h = document.getElementById('custom-riddle-hint').value.trim();
+
+            if (!q || !a) {
+                alert("⚠️ Vui lòng nhập đầy đủ cả Câu hỏi và Đáp án để hệ thống làm khóa bảo vệ!");
+                return;
+            }
+
+            localStorage.setItem('sm_riddle_q', q);
+            localStorage.setItem('sm_riddle_a', a);
+            localStorage.setItem('sm_riddle_h', h);
+            setChallengeMode('custom', false);
+
+            disciplineScore = Math.min(100, disciplineScore + 2);
+            document.getElementById('hud-score-display').innerText = `${disciplineScore}%`;
+            alert("🧩 Đã lưu câu đố thành công! Từ giờ khi còi báo động hoặc thông báo bám đuổi kích hoạt, bạn phải giải đúng câu đố này mới tắt được.");
+        }
+
+        function updateActiveRiddlePreview() {
+            const previewEl = document.getElementById('active-riddle-preview');
+            if (!previewEl) return;
+            if (challengeMode === 'custom') {
+                const q = localStorage.getItem('sm_riddle_q') || 'Mục tiêu thức dậy lúc mấy giờ sáng mai?';
+                previewEl.innerText = `Tự đặt: "${q}"`;
+            } else if (challengeMode === 'math') {
+                previewEl.innerText = "Toán học: Phép tính ngẫu nhiên";
+            } else {
+                previewEl.innerText = 'Cam kết: "TOI DI NGU NGAY"';
+            }
+        }
+
+        // ==========================================
+        // 4. SENTINEL, WEB WORKER & BÁM ĐUỔI KHI THOÁT MÀN HÌNH
         // ==========================================
         let sessionStartTime = null;
         let screenLimitMinutes = 30;
-        let screenTimerInterval = null;
         let lastUserActivityTime = Date.now();
         let isUserActive = true;
         let touchRateCount = 0;
@@ -951,6 +1162,15 @@
         let countdownSec = 30;
         let countdownTimer = null;
         let isLockedState = false;
+
+        // Biến phục vụ bám đuổi nền khi thoát màn hình
+        let bgGuardEnabled = true;
+        let isPageHidden = false;
+        let leaveAppCount = 0;
+        let hiddenDurationSec = 0;
+        let bgRepeatIntervalSec = 30;
+        let bgSentinelWorker = null;
+        let isPersistentChaseActive = false;
 
         function setScreenLimit(mins) {
             screenLimitMinutes = mins;
@@ -964,6 +1184,50 @@
             });
         }
 
+        function toggleBgGuard(checked) {
+            bgGuardEnabled = checked;
+            const hudStatus = document.getElementById('hud-bg-guard-status');
+            if (hudStatus) {
+                hudStatus.innerText = checked ? "ON" : "OFF";
+                hudStatus.className = checked ? "font-mono font-bold text-emerald-400" : "font-mono font-bold text-slate-500";
+            }
+        }
+
+        function updateBgRepeatInterval(val) {
+            bgRepeatIntervalSec = parseInt(val) || 30;
+        }
+
+        // Khởi tạo Inline Web Worker để trình duyệt không bóp nghẹt bộ đếm khi thu nhỏ màn hình
+        function initBackgroundWorker() {
+            const workerCode = `
+                let timer = null;
+                self.onmessage = function(e) {
+                    if (e.data === 'start') {
+                        if (timer) clearInterval(timer);
+                        timer = setInterval(() => {
+                            self.postMessage('tick');
+                        }, 1000);
+                    } else if (e.data === 'stop') {
+                        if (timer) clearInterval(timer);
+                        timer = null;
+                    }
+                };
+            `;
+            try {
+                const blob = new Blob([workerCode], { type: 'application/javascript' });
+                bgSentinelWorker = new Worker(URL.createObjectURL(blob));
+                bgSentinelWorker.onmessage = function(e) {
+                    if (e.data === 'tick') {
+                        onSentinelTick();
+                    }
+                };
+                bgSentinelWorker.postMessage('start');
+            } catch (err) {
+                // Fallback nếu trình duyệt chặn Worker
+                setInterval(onSentinelTick, 1000);
+            }
+        }
+
         function initScreenSentinel() {
             sessionStartTime = Date.now();
             const now = new Date();
@@ -973,17 +1237,16 @@
             ['mousemove', 'keydown', 'touchstart', 'scroll'].forEach(evt => {
                 window.addEventListener(evt, () => {
                     lastUserActivityTime = Date.now();
-                    if (!isUserActive) {
+                    if (!isUserActive && !isPageHidden) {
                         isUserActive = true;
                         const activeTag = document.getElementById('active-state-tag');
                         if (activeTag) {
-                            activeTag.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Đang Nhìn Màn Hình`;
+                            activeTag.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Đang Mở App`;
                         }
                     }
                 }, { passive: true });
             });
 
-            // SỬA LỖI TRIỆT ĐỂ: Kiểm tra phần tử trước khi gán để không gây sập script khi chạm
             window.addEventListener('touchmove', () => {
                 touchRateCount++;
                 const counterEl = document.getElementById('sensor-touch-counter');
@@ -998,64 +1261,127 @@
                 }
             }, { passive: true });
 
-            startSentinelTimer();
+            // THEO DÕI KHI NGƯỜI DÙNG THOÁT RA MÀN HÌNH CHÍNH HOẶC CHUYỂN APP KHÁC
+            document.addEventListener('visibilitychange', () => {
+                const activeTag = document.getElementById('active-state-tag');
+                const notifyOnLeave = document.getElementById('notif-on-leave-toggle')?.checked;
+
+                if (document.hidden) {
+                    isPageHidden = true;
+                    hiddenDurationSec = 0;
+                    leaveAppCount++;
+
+                    const leaveBadge = document.getElementById('leave-app-counter-badge');
+                    if (leaveBadge) leaveBadge.innerText = `${leaveAppCount} lần`;
+
+                    disciplineScore = Math.max(0, disciplineScore - 2);
+                    document.getElementById('hud-score-display').innerText = `${disciplineScore}%`;
+
+                    if (activeTag) {
+                        activeTag.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span> Đã Thoát Ra Ngoài`;
+                    }
+
+                    // Nếu đang bật bảo vệ nền hoặc đang trong trạng thái khóa/còi kêu mà cố tình thoát ra
+                    if (bgGuardEnabled && notifyOnLeave) {
+                        setTimeout(() => {
+                            if (document.hidden) {
+                                isPersistentChaseActive = true;
+                                sendPersistentNotification(
+                                    "🚨 Phát Hiện Thoát Ra Màn Hình!",
+                                    `Bạn vừa rời SLEEPMATE (Lần ${leaveAppCount}). Quay lại giải câu đố hoặc gập máy đi ngủ ngay!`
+                                );
+                            }
+                        }, 1800);
+                    }
+                } else {
+                    isPageHidden = false;
+                    hiddenDurationSec = 0;
+                    if (activeTag) {
+                        activeTag.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Đang Mở App`;
+                    }
+                    // Nếu trước đó đang bị thông báo bám đuổi do thoát app hoặc quá giờ, bật bảng câu đố ngay khi quay lại
+                    if (isPersistentChaseActive && (isLockedState || leaveAppCount >= 2)) {
+                        triggerMissionAlarm();
+                    }
+                }
+            });
+
+            initBackgroundWorker();
         }
 
-        function startSentinelTimer() {
-            if (screenTimerInterval) clearInterval(screenTimerInterval);
-            screenTimerInterval = setInterval(() => {
-                if (!sessionStartTime || isLockedState) return;
+        function onSentinelTick() {
+            if (!sessionStartTime) return;
 
-                if (Date.now() - lastUserActivityTime > 120000) {
-                    isUserActive = false;
-                    const activeTag = document.getElementById('active-state-tag');
-                    if (activeTag) {
-                        activeTag.innerHTML = `<span class="w-2 h-2 rounded-full bg-slate-500"></span> Đang Treo Máy`;
+            // Xử lý lặp lại thông báo khi người dùng vẫn đang ở ngoài màn hình (chuyển sang app khác)
+            if (isPageHidden && bgGuardEnabled) {
+                hiddenDurationSec++;
+                if (hiddenDurationSec > 0 && hiddenDurationSec % bgRepeatIntervalSec === 0) {
+                    isPersistentChaseActive = true;
+                    const qPreview = (challengeMode === 'custom')
+                        ? (localStorage.getItem('sm_riddle_q') || 'Giải câu đố của bạn')
+                        : 'Giải thử thách kỷ luật';
+                    sendPersistentNotification(
+                        `⏰ Cảnh Báo Lướt Máy Ngầm (${Math.floor(hiddenDurationSec / 60)}p${hiddenDurationSec % 60}s)`,
+                        `Đừng lướt app khác nữa! Mở SLEEPMATE và trả lời: "${qPreview}" để dừng thông báo.`
+                    );
+                }
+            }
+
+            if (isLockedState) return;
+
+            if (!isPageHidden && Date.now() - lastUserActivityTime > 120000) {
+                isUserActive = false;
+                const activeTag = document.getElementById('active-state-tag');
+                if (activeTag) {
+                    activeTag.innerHTML = `<span class="w-2 h-2 rounded-full bg-slate-500"></span> Đang Treo Máy`;
+                }
+                return;
+            }
+
+            const elapsedMs = Date.now() - sessionStartTime;
+            const totalSec = Math.floor(elapsedMs / 1000);
+            const h = Math.floor(totalSec / 3600);
+            const m = Math.floor((totalSec % 3600) / 60);
+            const s = totalSec % 60;
+            const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+
+            document.getElementById('hud-session-timer').innerText = timeStr;
+            document.getElementById('sentinel-live-counter').innerText = timeStr;
+
+            const limitMs = screenLimitMinutes * 60 * 1000;
+            const remainingMs = limitMs - elapsedMs;
+            const percent = Math.min(100, Math.floor((elapsedMs / limitMs) * 100));
+
+            document.getElementById('screen-limit-progress-bar').style.width = `${percent}%`;
+            document.getElementById('screen-limit-percent-text').innerText = `${percent}%`;
+
+            if (remainingMs > 0) {
+                const rMin = Math.floor(remainingMs / 60000);
+                const rSec = Math.floor((remainingMs % 60000) / 1000);
+                document.getElementById('sentinel-remaining-counter').innerText = 
+                    `${String(rMin).padStart(2, '0')}:${String(rSec).padStart(2, '0')}`;
+            } else {
+                document.getElementById('sentinel-remaining-counter').innerText = "00:00 (Hết Hạn)";
+            }
+
+            const isLimitExceeded = (remainingMs <= 0);
+            const autoLockOnLimitChecked = document.getElementById('auto-lock-on-limit').checked;
+
+            const now = new Date();
+            const curTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            const curfewTargetTime = document.getElementById('curfew-auto-lock-time').value;
+            const autoLockOnCurfewChecked = document.getElementById('auto-lock-on-curfew').checked;
+            const isCurfewHit = (autoLockOnCurfewChecked && curTimeStr === curfewTargetTime);
+
+            if ((isLimitExceeded && autoLockOnLimitChecked) || isCurfewHit) {
+                if (!countdownTimer && !isLockedState) {
+                    const reasonMsg = isCurfewHit ? "Đã đến mốc giờ giới nghiêm đêm khuya!" : "Đã hết hạn mức sử dụng thiết bị!";
+                    startAutoLockCountdown(reasonMsg);
+                    if (isPageHidden) {
+                        sendPersistentNotification("🔒 ĐÃ CHẠM GIỜ GIỚI NGHIÊM!", `${reasonMsg} Quay lại giải câu đố ngay!`);
                     }
-                    return;
                 }
-
-                const elapsedMs = Date.now() - sessionStartTime;
-                const totalSec = Math.floor(elapsedMs / 1000);
-                const h = Math.floor(totalSec / 3600);
-                const m = Math.floor((totalSec % 3600) / 60);
-                const s = totalSec % 60;
-                const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-
-                document.getElementById('hud-session-timer').innerText = timeStr;
-                document.getElementById('sentinel-live-counter').innerText = timeStr;
-
-                const limitMs = screenLimitMinutes * 60 * 1000;
-                const remainingMs = limitMs - elapsedMs;
-                const percent = Math.min(100, Math.floor((elapsedMs / limitMs) * 100));
-
-                document.getElementById('screen-limit-progress-bar').style.width = `${percent}%`;
-                document.getElementById('screen-limit-percent-text').innerText = `${percent}%`;
-
-                if (remainingMs > 0) {
-                    const rMin = Math.floor(remainingMs / 60000);
-                    const rSec = Math.floor((remainingMs % 60000) / 1000);
-                    document.getElementById('sentinel-remaining-counter').innerText = 
-                        `${String(rMin).padStart(2, '0')}:${String(rSec).padStart(2, '0')}`;
-                } else {
-                    document.getElementById('sentinel-remaining-counter').innerText = "00:00 (Hết Hạn)";
-                }
-
-                const isLimitExceeded = (remainingMs <= 0);
-                const autoLockOnLimitChecked = document.getElementById('auto-lock-on-limit').checked;
-
-                const now = new Date();
-                const curTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-                const curfewTargetTime = document.getElementById('curfew-auto-lock-time').value;
-                const autoLockOnCurfewChecked = document.getElementById('auto-lock-on-curfew').checked;
-                const isCurfewHit = (autoLockOnCurfewChecked && curTimeStr === curfewTargetTime);
-
-                if ((isLimitExceeded && autoLockOnLimitChecked) || isCurfewHit) {
-                    if (!countdownTimer && !isLockedState) {
-                        startAutoLockCountdown(isCurfewHit ? "Đã đến mốc giờ giới nghiêm đêm khuya!" : "Đã hết hạn mức sử dụng thiết bị!");
-                    }
-                }
-            }, 1000);
+            }
         }
 
         function startAutoLockCountdown(reason) {
@@ -1087,6 +1413,7 @@
 
         function triggerHardcoreLockout(reason) {
             isLockedState = true;
+            isPersistentChaseActive = true;
             stopContinuousSiren();
             if (reason) {
                 document.getElementById('lockout-reason-text').innerText = reason;
@@ -1098,17 +1425,20 @@
         }
 
         function emergencyUnlockPrompt() {
-            const reason = prompt("Nhập lý do thực sự khẩn cấp:");
+            const reason = prompt("Nhập lý do thực sự khẩn cấp (tối thiểu 8 ký tự):");
             if (reason && reason.trim().length >= 8) {
                 document.getElementById('hardcore-lock-overlay').classList.add('hidden');
                 isLockedState = false;
+                isPersistentChaseActive = false;
+                stopContinuousSiren();
                 alert("Đã mở khóa tạm thời. Hoàn tất việc trong 5 phút nhé!");
             } else {
-                alert("Lý do không hợp lệ. Tiếp tục khóa để bạn đi ngủ!");
+                alert("Lý do không hợp lệ. Hãy bấm Giải Câu Đố để tắt còi và đi ngủ!");
             }
         }
 
         function endScreenSessionManually() {
+            isPersistentChaseActive = false;
             stopContinuousSiren();
             alert("👏 Tuyệt vời! Bạn đã chủ động tắt máy đúng giờ. Chúc bạn ngủ thật ngon!");
             location.reload();
@@ -1122,8 +1452,36 @@
         }
 
         // ==========================================
-        // 4. HỆ THỐNG THÔNG BÁO MOBILE & HAPTIC VIBRATION
+        // 5. HỆ THỐNG THÔNG BÁO PERSISTENT & KEEP-ALIVE
         // ==========================================
+        let swRegistration = null;
+
+        // Đăng ký Service Worker ngầm nhẹ để hỗ trợ showNotification bám dính trên Android/Desktop
+        function initServiceWorkerSupport() {
+            if ('serviceWorker' in navigator) {
+                const swCode = `
+                    self.addEventListener('install', e => self.skipWaiting());
+                    self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
+                    self.addEventListener('notificationclick', function(event) {
+                        event.notification.close();
+                        event.waitUntil(
+                            clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
+                                for (let client of windowClients) {
+                                    if ('focus' in client) return client.focus();
+                                }
+                            })
+                        );
+                    });
+                `;
+                try {
+                    const blob = new Blob([swCode], { type: 'application/javascript' });
+                    navigator.serviceWorker.register(URL.createObjectURL(blob)).then(reg => {
+                        swRegistration = reg;
+                    }).catch(() => {});
+                } catch (e) {}
+            }
+        }
+
         function updateNotificationStatusUI() {
             const badge = document.getElementById('notif-status-badge');
             const label = document.getElementById('notif-status-text');
@@ -1143,8 +1501,8 @@
                     badge.className = "px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
                     badge.innerText = "Đã Cho Phép";
                 }
-                if (label) label.innerText = "Đang Bật (Active)";
-                if (btnLabel) btnLabel.innerText = "Thông Báo Đang Hoạt Động";
+                if (label) label.innerText = "Bám Đuổi Nền (Active)";
+                if (btnLabel) btnLabel.innerText = "Thông Báo Đang Bật";
             } else if (Notification.permission === "denied") {
                 if (badge) {
                     badge.className = "px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30";
@@ -1172,7 +1530,10 @@
                 updateNotificationStatusUI();
                 if (permission === "granted") {
                     playMelatoninChime();
-                    sendMobilePush("SLEEPMATE Đã Kết Nối", "Hệ thống kỷ luật ban đêm đã sẵn sàng nhắc nhở bạn đi ngủ đúng giờ!");
+                    sendPersistentNotification(
+                        "🛡️ SLEEPMATE Bám Đuổi Nền Đã Bật!",
+                        "Khi bạn thoát ra ngoài màn hình, hệ thống sẽ tự động nhắc nhở cho đến khi bạn giải đúng câu đố."
+                    );
                 } else if (permission === "denied") {
                     alert("Bạn đã chặn thông báo. Hãy nhấn vào biểu tượng ổ khóa cạnh thanh địa chỉ web để bật lại!");
                 }
@@ -1187,8 +1548,8 @@
                 const gain = ctx.createGain();
 
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(659.25, now); // E5
-                osc.frequency.exponentialRampToValueAtTime(493.88, now + 0.35); // B4
+                osc.frequency.setValueAtTime(659.25, now);
+                osc.frequency.exponentialRampToValueAtTime(493.88, now + 0.35);
 
                 gain.gain.setValueAtTime(0.001, now);
                 gain.gain.linearRampToValueAtTime(0.3, now + 0.05);
@@ -1203,34 +1564,81 @@
 
         function triggerMobileVibration() {
             if ("vibrate" in navigator) {
-                navigator.vibrate([200, 100, 300]);
+                navigator.vibrate([250, 120, 350, 120, 400]);
             }
         }
 
-        function sendMobilePush(title, body) {
+        // Gửi thông báo ưu tiên cao (Ghim trên thanh thông báo với requireInteraction & renotify)
+        function sendPersistentNotification(title, body) {
             triggerMobileVibration();
             playMelatoninChime();
 
-            if ("Notification" in window && Notification.permission === "granted") {
+            if (!("Notification" in window) || Notification.permission !== "granted") return;
+
+            const options = {
+                body: body,
+                icon: "https://placehold.co/128x128/060914/FF2A85?text=SLEEP",
+                tag: "sleepmate-persistent-guard",
+                renotify: true,
+                requireInteraction: true,
+                vibrate: [250, 120, 350, 120, 400]
+            };
+
+            try {
+                if (swRegistration && swRegistration.showNotification) {
+                    swRegistration.showNotification(title, options);
+                } else {
+                    const n = new Notification(title, options);
+                    n.onclick = function() {
+                        window.focus();
+                        this.close();
+                    };
+                }
+            } catch (e) {
                 try {
-                    new Notification(title, {
-                        body: body,
-                        icon: "https://placehold.co/128x128/060914/00F0FF?text=SLEEP"
-                    });
-                } catch(e) {}
+                    new Notification(title, { body: body });
+                } catch (err) {}
             }
         }
 
-        function testLateNightNotification() {
+        function testBackgroundNotificationNow() {
             if ("Notification" in window && Notification.permission === "granted") {
-                sendMobilePush("🌙 Cảnh Báo Giấc Ngủ Test", "Đã đến lúc buông máy cho mắt nghỉ ngơi và giải phóng Melatonin!");
+                sendPersistentNotification(
+                    "🌙 Test Thông Báo Bám Đuổi Thành Công!",
+                    "Thử thoát ra màn hình chính ngay bây giờ: sau 2 giây hệ thống sẽ tự động bắn thông báo gọi bạn quay lại!"
+                );
             } else {
                 requestNotificationAccess();
             }
         }
 
+        // Luồng âm thanh tần số cực thấp (Sub-audible Keep-Alive) + WakeLock giúp trình duyệt không bị OS giết khi thoát ra ngoài
+        let keepAliveOsc = null;
+        async function enableAudioKeepAlive() {
+            try {
+                const ctx = getAudioContext();
+                if (!keepAliveOsc) {
+                    const gain = ctx.createGain();
+                    gain.gain.setValueAtTime(0.0001, ctx.currentTime); // Gần như im lặng tuyệt đối nhưng giữ tiến trình Audio sống
+                    keepAliveOsc = ctx.createOscillator();
+                    keepAliveOsc.frequency.setValueAtTime(1, ctx.currentTime);
+                    keepAliveOsc.connect(gain);
+                    gain.connect(ctx.destination);
+                    keepAliveOsc.start();
+                }
+                if ('wakeLock' in navigator) {
+                    await navigator.wakeLock.request('screen').catch(() => {});
+                }
+                const btn = document.getElementById('btn-keep-alive');
+                if (btn) {
+                    btn.innerText = "Đã Bật Giữ Ngầm ✓";
+                    btn.className = "px-3 py-1.5 bg-emerald-600 text-white font-bold rounded-xl shrink-0";
+                }
+            } catch (e) {}
+        }
+
         // ==========================================
-        // 5. CẢM BIẾN TƯ THẾ NẰM BẤM & CÒI HÚ
+        // 6. CẢM BIẾN TƯ THẾ & THỬ THÁCH DẬP CÒI BÁO ĐỘNG
         // ==========================================
         function requestMotionPermission() {
             if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
@@ -1266,7 +1674,7 @@
                         if (angleDisp) angleDisp.innerText = `${beta}°`;
                         document.getElementById('phone-posture-modal').classList.remove('hidden');
                         startContinuousSiren();
-                        sendMobilePush("🛏️ Cảnh Báo Nằm Bấm Máy", "Góc máy cho thấy bạn đang nằm rọi ánh sáng xanh vào mắt!");
+                        sendPersistentNotification("🛏️ Cảnh Báo Nằm Bấm Máy", "Góc máy cho thấy bạn đang nằm rọi ánh sáng xanh vào mắt!");
                     }
                 } else {
                     if (postureEl) {
@@ -1298,7 +1706,7 @@
             const ctx = getAudioContext();
             isAlarmRunning = true;
             sirenGain = ctx.createGain();
-            sirenGain.gain.setValueAtTime(0.7, ctx.currentTime);
+            sirenGain.gain.setValueAtTime(0.65, ctx.currentTime);
             sirenGain.connect(ctx.destination);
 
             sirenOsc = ctx.createOscillator();
@@ -1319,24 +1727,64 @@
             document.getElementById('screen-strobe-overlay').classList.add('hidden');
         }
 
+        // Hiển thị Modal Giải Câu Đố (Tự đặt / Toán học / Gõ cam kết)
         function triggerMissionAlarm() {
             startContinuousSiren();
-            const a = Math.floor(Math.random() * 15) + 6;
-            const b = Math.floor(Math.random() * 12) + 5;
-            window.targetMathAns = a + b;
-            document.getElementById('math-problem-text').innerText = `${a} + ${b} = ?`;
-            document.getElementById('math-answer-input').value = '';
+            const badgeEl = document.getElementById('challenge-mode-badge');
+            const questionEl = document.getElementById('challenge-question-display');
+            const hintEl = document.getElementById('challenge-hint-display');
+            const inputEl = document.getElementById('challenge-answer-input');
+
+            inputEl.value = '';
+
+            if (challengeMode === 'custom') {
+                const q = localStorage.getItem('sm_riddle_q') || 'Mục tiêu thức dậy lúc mấy giờ sáng mai?';
+                const a = localStorage.getItem('sm_riddle_a') || '06:00';
+                const h = localStorage.getItem('sm_riddle_h') || '';
+
+                currentExpectedAnswer = a.trim().toLowerCase();
+                badgeEl.innerText = "✍️ CÂU ĐỐ TỰ ĐẶT CỦA BẠN";
+                questionEl.innerText = q;
+                if (h) {
+                    hintEl.innerText = `💡 Gợi ý: ${h}`;
+                    hintEl.classList.remove('hidden');
+                } else {
+                    hintEl.classList.add('hidden');
+                }
+            } else if (challengeMode === 'math') {
+                const a = Math.floor(Math.random() * 18) + 12;
+                const b = Math.floor(Math.random() * 15) + 7;
+                const c = Math.floor(Math.random() * 9) + 3;
+                currentExpectedAnswer = String(a + b - c);
+                badgeEl.innerText = "🔢 THỬ THÁCH TOÁN HỌC";
+                questionEl.innerText = `${a} + ${b} - ${c} = ?`;
+                hintEl.classList.add('hidden');
+            } else {
+                currentExpectedAnswer = "toi cam ket di ngu ngay";
+                badgeEl.innerText = "📜 GÕ CAM KẾT KỶ LUẬT";
+                questionEl.innerText = 'Gõ cụm từ: "TOI CAM KET DI NGU NGAY"';
+                hintEl.innerText = "💡 Không phân biệt chữ hoa/thường, gõ không dấu";
+                hintEl.classList.remove('hidden');
+            }
+
             document.getElementById('mission-alarm-modal').classList.remove('hidden');
+            setTimeout(() => inputEl.focus(), 100);
         }
 
-        function verifyMathAnswer() {
-            const val = parseInt(document.getElementById('math-answer-input').value);
-            if (val === window.targetMathAns) {
+        function verifyChallengeAnswer() {
+            const userVal = document.getElementById('challenge-answer-input').value.trim().toLowerCase();
+            if (!userVal) return;
+
+            if (userVal === currentExpectedAnswer) {
                 stopContinuousSiren();
+                isPersistentChaseActive = false;
+                isLockedState = false;
                 document.getElementById('mission-alarm-modal').classList.add('hidden');
-                alert("🎉 Chính xác! Vỏ não đã nhận thức, hãy gập máy đi ngủ ngay nhé.");
+                document.getElementById('hardcore-lock-overlay').classList.add('hidden');
+                alert("🎉 Chính xác! Đã tắt còi và dừng chuỗi thông báo bám đuổi. Hãy gập máy đi ngủ ngay nhé!");
             } else {
-                alert("❌ Đáp số chưa đúng, hãy tính cẩn thận lại nào!");
+                triggerMobileVibration();
+                alert("❌ Đáp án chưa chính xác! Còi báo động và thông báo vẫn đang tiếp tục.");
             }
         }
 
@@ -1349,7 +1797,7 @@
         }
 
         // ==========================================
-        // 6. PHƯƠNG HƯỚNG KỶ LUẬT & NHẬT KÝ ĐÊM
+        // 7. PHƯƠNG HƯỚNG KỶ LUẬT & NHẬT KÝ ĐÊM
         // ==========================================
         function saveDirectionsPlan() {
             const g1 = document.getElementById('direction-goal-1').value.trim();
@@ -1447,7 +1895,7 @@
         }
 
         // ==========================================
-        // 7. THỞ 4-7-8 & SÓNG NÃO AUDIO
+        // 8. THỞ 4-7-8 & SÓNG NÃO AUDIO
         // ==========================================
         let isBreathing = false;
         function toggleBreathingExercise() {
@@ -1514,7 +1962,7 @@
         }
 
         // ==========================================
-        // 8. ĐIỀU HƯỚNG TAB
+        // 9. ĐIỀU HƯỚNG TAB & KHỞI CHẠY
         // ==========================================
         function switchTab(id) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
@@ -1531,6 +1979,8 @@
 
         window.onload = function() {
             document.getElementById('journal-date').innerText = new Date().toLocaleDateString('vi-VN');
+            initServiceWorkerSupport();
+            loadCustomRiddleConfig();
             selectProfile('cap3');
             initScreenSentinel();
             loadDirectionsPlan();
